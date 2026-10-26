@@ -40,6 +40,22 @@ interface MistakeNotebookProps {
   onOpenSaveModal: () => void;
 }
 
+// Format note with fully translated Chinese prefixes
+function formatNoteText(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/^Pitfall:\s*/i, '易错坑点：')
+    .replace(/^Core Principle:\s*/i, '核心原理：')
+    .replace(/^Exam Strategy:\s*/i, '考场策略：')
+    .replace(/^High Frequency Mistake:\s*/i, '高频陷阱：')
+    .replace(/^Geometric Insight:\s*/i, '几何洞察：')
+    .replace(/^易错警示：/g, '易错坑点：')
+    .replace(/^考点精髓：/g, '核心原理：')
+    .replace(/^复习备忘：/g, '考场策略：')
+    .replace(/^致命陷阱：/g, '高频陷阱：')
+    .replace(/^特殊几何直观：/g, '几何洞察：');
+}
+
 export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
   questions,
   t,
@@ -76,15 +92,13 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
 
   const allTags = useMemo(() => Array.from(tagCounts.keys()), [tagCounts]);
 
-  // High-frequency exam keywords
+  // High-frequency exam keywords in Chinese
   const popularKeywords = [
-    { label: t.keywordsTagSecant, query: 'secant' },
-    { label: t.keywordsTagTangent, query: 'tangent' },
-    { label: t.keywordsTagDisjoint, query: 'disjoint' },
-    { label: t.keywordsTagSquare, query: 'square' },
-    { label: t.keywordsTagChord, query: 'chord' },
-    { label: t.keywordsTagExtrema, query: 'extrema' },
-    { label: t.keywordsTagVertical, query: 'vertical' },
+    { label: '相交与弦长', query: '相交与弦长' },
+    { label: '相切与切线', query: '相切与切线' },
+    { label: '最值距离', query: '最值距离' },
+    { label: '竖直线防坑', query: '竖直线防坑' },
+    { label: '垂径定理', query: '垂径定理' },
   ];
 
   // Highlight helper for search keywords
@@ -150,9 +164,9 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-6 space-y-6">
-      {/* Top Header & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+    <div className="bg-white border border-slate-200 rounded-lg p-3.5 sm:p-6 space-y-5 sm:space-y-6">
+      {/* Top Header & Actions (Tailored for mobile 390px) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div>
           <div className="flex items-center gap-2">
             <Bookmark className="w-5 h-5 text-indigo-600 shrink-0" />
@@ -161,26 +175,26 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
               ({questions.length} {t.notebookCountText})
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
             {t.notebookSub}
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <button
             onClick={() => setShowGlossary(!showGlossary)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors cursor-pointer ${
+            className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer shrink-0 ${
               showGlossary ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 bg-white border border-slate-200 hover:bg-slate-50'
             }`}
           >
-            <HelpCircle className="w-4 h-4" />
+            <HelpCircle className="w-3.5 h-3.5" />
             <span>{t.glossaryTitle}</span>
           </button>
           <button
             onClick={onOpenSaveModal}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-white bg-slate-900 rounded-md hover:bg-slate-800 transition-colors whitespace-nowrap shadow-xs cursor-pointer"
+            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 rounded-md hover:bg-slate-800 transition-colors whitespace-nowrap shadow-xs cursor-pointer shrink-0"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             <span>{t.btnSaveCurrent}</span>
           </button>
 
@@ -188,32 +202,32 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
           {questions.length > 0 && (
             <button
               onClick={() => setShowClearConfirmModal(true)}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs sm:text-sm font-medium text-rose-700 bg-rose-50 border border-rose-200 rounded-md hover:bg-rose-100 transition-colors whitespace-nowrap cursor-pointer"
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-rose-700 bg-rose-50 border border-rose-200 rounded-md hover:bg-rose-100 transition-colors whitespace-nowrap cursor-pointer shrink-0"
               title={lang === 'zh' ? '清空错题本' : 'Clear All'}
             >
-              <Trash2 className="w-4 h-4 text-rose-600" />
-              <span>{lang === 'zh' ? '清空错题本' : 'Clear All'}</span>
+              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+              <span>{lang === 'zh' ? '清空错题' : 'Clear'}</span>
             </button>
           )}
 
           <button
             onClick={() => window.print()}
             title={t.btnPrint}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap cursor-pointer shrink-0"
           >
-            <Printer className="w-4 h-4" />
+            <Printer className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{t.btnPrint}</span>
           </button>
           <button
             onClick={handleExportJSON}
             title={t.btnExportJson}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap cursor-pointer shrink-0"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{t.btnExportJson}</span>
           </button>
-          <label className="flex items-center gap-1 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors cursor-pointer whitespace-nowrap">
-            <Upload className="w-4 h-4" />
+          <label className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors cursor-pointer whitespace-nowrap shrink-0">
+            <Upload className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{t.btnImportJson}</span>
             <input type="file" accept=".json" onChange={handleImportFile} className="hidden" />
           </label>
@@ -222,7 +236,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
 
       {/* Keywords Glossary Box (Collapsible) */}
       {showGlossary && (
-        <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-3 text-xs sm:text-sm">
+        <div className="p-3.5 sm:p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-3 text-xs sm:text-sm">
           <div className="flex items-center justify-between">
             <span className="font-bold text-slate-900 flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-indigo-600" />
@@ -230,7 +244,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
             </span>
             <span className="text-xs text-slate-500">{t.glossarySub}</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
             <div className="p-2.5 bg-white border border-slate-200 rounded">
               <div className="font-semibold text-slate-900">{t.keywordsTagSquare}</div>
               <div className="text-slate-500 text-xs mt-0.5">
@@ -255,7 +269,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
 
       {/* Filter and Search Bar */}
       <div className="space-y-3">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 sm:gap-3">
           {/* Search Input */}
           <div className="relative flex-1 max-w-lg">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -264,16 +278,16 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
               placeholder={t.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 bg-white border border-slate-200 rounded-md focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
+              className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 bg-white border border-slate-200 rounded-md focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
             />
           </div>
 
           {/* Mastered Filter & Tag Selectors */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-md text-xs sm:text-sm shrink-0">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            <div className="flex items-center gap-1 p-0.5 sm:p-1 bg-slate-100 rounded-md text-xs shrink-0">
               <button
                 onClick={() => setMasteredFilter('all')}
-                className={`px-3 py-1 font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
+                className={`px-2.5 py-1 font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
                   masteredFilter === 'all'
                     ? 'bg-white text-slate-900 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -283,7 +297,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
               </button>
               <button
                 onClick={() => setMasteredFilter('unmastered')}
-                className={`px-3 py-1 font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
+                className={`px-2.5 py-1 font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
                   masteredFilter === 'unmastered'
                     ? 'bg-white text-rose-700 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -293,7 +307,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
               </button>
               <button
                 onClick={() => setMasteredFilter('mastered')}
-                className={`px-3 py-1 font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
+                className={`px-2.5 py-1 font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
                   masteredFilter === 'mastered'
                     ? 'bg-white text-emerald-700 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -307,7 +321,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
             <select
               value={selectedTag}
               onChange={(e) => setSelectedTag(e.target.value)}
-              className="px-2.5 py-1.5 text-xs sm:text-sm text-slate-700 bg-white border border-slate-200 rounded-md focus:outline-none focus:border-sky-500 cursor-pointer shrink-0"
+              className="px-2 py-1 text-xs text-slate-700 bg-white border border-slate-200 rounded-md focus:outline-none focus:border-sky-500 cursor-pointer shrink-0"
             >
               <option value="all">{t.filterAllTags}</option>
               {allTags.map((tag) => (
@@ -319,16 +333,16 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
           </div>
         </div>
 
-        {/* Item 6: Interactive Tag Filter Chips Bar */}
-        <div className="flex items-center gap-1.5 overflow-x-auto text-xs pb-1 pt-1">
-          <span className="text-slate-400 flex items-center gap-1 shrink-0 font-medium">
+        {/* Interactive Tag Filter Chips Bar in Pure Chinese */}
+        <div className="flex items-center gap-1.5 overflow-x-auto text-xs pb-1 pt-0.5">
+          <span className="text-slate-400 flex items-center gap-1 shrink-0 font-medium text-[11px] sm:text-xs">
             <Tag className="w-3.5 h-3.5" />
             <span>{lang === 'zh' ? '标签筛选:' : 'Tags:'}</span>
           </span>
 
           <button
             onClick={() => setSelectedTag('all')}
-            className={`px-2.5 py-1 rounded-full transition-colors whitespace-nowrap font-medium cursor-pointer ${
+            className={`px-2.5 py-1 rounded-full transition-colors whitespace-nowrap font-medium cursor-pointer shrink-0 text-xs ${
               selectedTag === 'all'
                 ? 'bg-slate-900 text-white shadow-xs'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -341,7 +355,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
             <button
               key={tag}
               onClick={() => setSelectedTag(selectedTag === tag ? 'all' : tag)}
-              className={`px-2.5 py-1 rounded-full transition-colors whitespace-nowrap font-medium cursor-pointer ${
+              className={`px-2.5 py-1 rounded-full transition-colors whitespace-nowrap font-medium cursor-pointer shrink-0 text-xs ${
                 selectedTag === tag
                   ? 'bg-sky-600 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -354,7 +368,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
           {selectedTag !== 'all' && (
             <button
               onClick={() => setSelectedTag('all')}
-              className="text-xs text-sky-600 hover:underline shrink-0 ml-1.5 cursor-pointer font-medium"
+              className="text-xs text-sky-600 hover:underline shrink-0 ml-1 cursor-pointer font-medium"
             >
               {lang === 'zh' ? '清除标签' : 'Clear tag'}
             </button>
@@ -363,14 +377,14 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
 
         {/* Popular Keyword Chips for Quick Search */}
         <div className="flex items-center gap-1.5 overflow-x-auto text-xs pb-1">
-          <span className="text-slate-400 shrink-0 font-medium">
+          <span className="text-slate-400 shrink-0 font-medium text-[11px] sm:text-xs">
             {lang === 'zh' ? '高频考点:' : 'Keywords:'}
           </span>
           {popularKeywords.map((kw, i) => (
             <button
               key={i}
               onClick={() => setSearchQuery(searchQuery === kw.query ? '' : kw.query)}
-              className={`px-2 py-0.5 rounded transition-colors whitespace-nowrap font-medium cursor-pointer ${
+              className={`px-2 py-0.5 rounded transition-colors whitespace-nowrap font-medium cursor-pointer shrink-0 text-xs ${
                 searchQuery.toLowerCase() === kw.query
                   ? 'bg-slate-800 text-white'
                   : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
@@ -392,7 +406,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
 
       {/* Question Cards List */}
       {filtered.length === 0 ? (
-        <div className="py-14 text-center text-slate-500 border border-dashed border-slate-200 rounded-lg space-y-3">
+        <div className="py-12 sm:py-14 text-center text-slate-500 border border-dashed border-slate-200 rounded-lg space-y-3 p-4">
           <p className="text-sm sm:text-base font-semibold">{t.noQuestionsFound}</p>
           <p className="text-xs sm:text-sm text-slate-400">
             {t.noQuestionsSub}
@@ -410,17 +424,17 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-3.5 sm:gap-4">
           {filtered.map((item) => (
             <div
               key={item.id}
-              className={`border rounded-lg p-4 sm:p-5 transition-all bg-white hover:border-slate-300 ${
+              className={`border rounded-lg p-3.5 sm:p-5 transition-all bg-white hover:border-slate-300 ${
                 item.isMastered ? 'border-slate-200' : 'border-slate-300 ring-1 ring-slate-200/50'
               }`}
             >
-              {/* Card Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                <div className="flex items-center gap-2.5">
+              {/* Card Header (Responsive wrap on iPhone 13 390px) */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2.5 border-b border-slate-100">
+                <div className="flex items-center gap-2 min-w-0">
                   <button
                     onClick={() => onToggleMastered(item.id)}
                     title={item.isMastered ? t.statusUnmastered : t.statusMastered}
@@ -432,12 +446,12 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
                       <Circle className="w-5 h-5 text-rose-500" />
                     )}
                   </button>
-                  <h3 className="text-sm sm:text-base font-semibold text-slate-900">
+                  <h3 className="text-sm sm:text-base font-semibold text-slate-900 truncate">
                     {highlightMatch(item.title, searchQuery)}
                   </h3>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500">
+                <div className="flex items-center gap-2 text-xs text-slate-500 shrink-0 ml-7 sm:ml-0">
                   <button
                     onClick={() => setSelectedTag(item.tag)}
                     className="font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded transition-colors cursor-pointer"
@@ -451,8 +465,8 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
               </div>
 
               {/* Card Body: Equations */}
-              <div className="py-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
-                <div className="bg-slate-50 p-3 rounded-md border border-slate-100">
+              <div className="py-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div className="bg-slate-50 p-2.5 rounded-md border border-slate-100 min-w-0 overflow-x-auto">
                   <span className="text-slate-500 block mb-1 font-medium">{t.circleInputHeader}:</span>
                   {item.circleMode === 'general' ? (
                     <MathView
@@ -465,7 +479,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
                   )}
                 </div>
 
-                <div className="bg-slate-50 p-3 rounded-md border border-slate-100">
+                <div className="bg-slate-50 p-2.5 rounded-md border border-slate-100 min-w-0 overflow-x-auto">
                   <span className="text-slate-500 block mb-1 font-medium">{t.lineInputHeader}:</span>
                   <MathView
                     math={`${item.generalLine.A}x + ${item.generalLine.B}y + ${item.generalLine.C} = 0`}
@@ -473,21 +487,21 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
                 </div>
               </div>
 
-              {/* Card Note / Reflection */}
-              <div className="pt-2 text-xs sm:text-sm">
+              {/* Card Note / Reflection (Formatted with translated Chinese prefixes) */}
+              <div className="pt-1.5 text-xs">
                 {editingNoteId === item.id ? (
                   <div className="space-y-2">
                     <textarea
                       value={tempNote}
                       onChange={(e) => setTempNote(e.target.value)}
                       rows={2}
-                      className="w-full p-2.5 text-xs sm:text-sm text-slate-800 bg-white border border-slate-300 rounded focus:outline-none focus:border-sky-500"
-                      placeholder="Write your reflections..."
+                      className="w-full p-2 text-xs text-slate-800 bg-white border border-slate-300 rounded focus:outline-none focus:border-sky-500"
+                      placeholder="写下本题的易错坑点、核心原理或解题心得..."
                     />
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => setEditingNoteId(null)}
-                        className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded cursor-pointer"
+                        className="px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-100 rounded cursor-pointer"
                       >
                         {t.btnCancel}
                       </button>
@@ -496,38 +510,38 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
                           onUpdateNote(item.id, tempNote);
                           setEditingNoteId(null);
                         }}
-                        className="px-3 py-1.5 text-xs font-medium text-white bg-slate-900 rounded hover:bg-slate-800 cursor-pointer"
+                        className="px-2.5 py-1 text-xs font-medium text-white bg-slate-900 rounded hover:bg-slate-800 cursor-pointer"
                       >
                         {t.btnSaveNote}
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-start justify-between gap-3 bg-amber-50/50 border border-amber-100/60 rounded p-3 text-slate-700">
+                  <div className="flex items-start justify-between gap-2.5 bg-amber-50/50 border border-amber-100/70 rounded p-2.5 text-slate-700">
                     <div className="leading-relaxed">
                       <span className="font-semibold text-amber-900 mr-1.5">{t.noteLabel}</span>
                       <span>
                         {item.userNote
-                          ? highlightMatch(item.userNote, searchQuery)
+                          ? highlightMatch(formatNoteText(item.userNote), searchQuery)
                           : t.noNoteText}
                       </span>
                     </div>
                     <button
                       onClick={() => {
                         setEditingNoteId(item.id);
-                        setTempNote(item.userNote);
+                        setTempNote(formatNoteText(item.userNote));
                       }}
                       title={t.btnEditNote}
                       className="text-slate-400 hover:text-slate-700 shrink-0 p-1 cursor-pointer"
                     >
-                      <Edit3 className="w-4 h-4" />
+                      <Edit3 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 )}
               </div>
 
-              {/* Card Footer Actions */}
-              <div className="flex items-center justify-between pt-3 mt-2 border-t border-slate-100 text-xs sm:text-sm">
+              {/* Card Footer Actions (Never crushed on mobile) */}
+              <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-slate-100 text-xs">
                 <span
                   className={`font-medium ${
                     item.isMastered ? 'text-emerald-700' : 'text-rose-600'
@@ -536,18 +550,18 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
                   {item.isMastered ? t.statusMastered : t.statusUnmastered}
                 </span>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => onLoadQuestion(item)}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-sky-700 bg-sky-50 rounded-md hover:bg-sky-100 transition-colors cursor-pointer"
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-sky-700 bg-sky-50 rounded-md hover:bg-sky-100 transition-colors cursor-pointer"
                   >
                     <span>{t.btnLoadIntoSolver}</span>
-                    <ArrowUpRight className="w-4 h-4" />
+                    <ArrowUpRight className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => onDeleteQuestion(item.id)}
                     title={t.btnDelete}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
+                    className="p-1 text-slate-400 hover:text-rose-600 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

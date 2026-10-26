@@ -29,11 +29,35 @@ import {
   Plus,
   FileText,
   BookmarkCheck,
-  Compass,
 } from 'lucide-react';
 
+// Normalizer to ensure tag & note prefixes are fully translated in Chinese
+function normalizeMistakeQuestion(q: MistakeQuestion): MistakeQuestion {
+  let tag = q.tag;
+  if (tag === 'Secant & Chord' || tag === '相交弦长') tag = '相交与弦长';
+  else if (tag === 'Distance Extrema' || tag === '最值问题' || tag === '距离极值') tag = '最值距离';
+  else if (tag === 'Tangent & Contact' || tag === '切线验证') tag = '相切与切线';
+  else if (tag === 'Vertical Line x=c' || tag === '垂直特殊线' || tag === '垂直特殊线 x=c') tag = '竖直线防坑';
+  else if (tag === 'Perpendicular Chord' || tag === '参数逆推') tag = '垂径定理';
+
+  let userNote = q.userNote || '';
+  userNote = userNote
+    .replace(/^Pitfall:\s*/i, '易错坑点：')
+    .replace(/^Core Principle:\s*/i, '核心原理：')
+    .replace(/^Exam Strategy:\s*/i, '考场策略：')
+    .replace(/^High Frequency Mistake:\s*/i, '高频陷阱：')
+    .replace(/^Geometric Insight:\s*/i, '几何洞察：')
+    .replace(/^易错警示：/g, '易错坑点：')
+    .replace(/^考点精髓：/g, '核心原理：')
+    .replace(/^复习备忘：/g, '考场策略：')
+    .replace(/^致命陷阱：/g, '高频陷阱：')
+    .replace(/^特殊几何直观：/g, '几何洞察：');
+
+  return { ...q, tag, userNote };
+}
+
 export default function App() {
-  // Multilingual State: Default English or Chinese based on browser/storage
+  // Multilingual State: Default Chinese, with URL param and localStorage detection
   const [lang, setLang] = useState<SupportedLanguage>(() => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -44,9 +68,6 @@ export default function App() {
       const savedLang = localStorage.getItem('geometry_app_lang');
       if (savedLang && ['en', 'es', 'fr', 'pt', 'zh'].includes(savedLang)) {
         return savedLang as SupportedLanguage;
-      }
-      if (navigator.language && navigator.language.startsWith('zh')) {
-        return 'zh';
       }
     } catch {
       // fallback
@@ -100,7 +121,7 @@ export default function App() {
     isVertical: false,
   });
 
-  // Single-equation standby states (Requirement 3: when only one is provided, reset and gray out the other)
+  // Single-equation standby states
   const [circleDisabled, setCircleDisabled] = useState(false);
   const [lineDisabled, setLineDisabled] = useState(false);
 
@@ -109,12 +130,15 @@ export default function App() {
     try {
       const saved = localStorage.getItem('geometry_mistake_notebook_v2');
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(normalizeMistakeQuestion);
+        }
       }
     } catch {
       // fallback
     }
-    return PRESET_EXAM_PROBLEMS;
+    return PRESET_EXAM_PROBLEMS.map(normalizeMistakeQuestion);
   });
 
   // Save Modal open state
@@ -194,10 +218,10 @@ export default function App() {
 
   // Add current problem to Mistake Notebook
   const handleSaveCurrentProblem = (title: string, tag: string, note: string) => {
-    const newEntry: MistakeQuestion = {
+    const newEntry: MistakeQuestion = normalizeMistakeQuestion({
       id: 'mq-' + Date.now(),
       title,
-      tag: tag || t.keywordsTagSecant,
+      tag: tag || '相交与弦长',
       date: new Date().toISOString().slice(0, 10),
       circleMode,
       generalCircle,
@@ -208,7 +232,7 @@ export default function App() {
       userNote: note,
       isMastered: false,
       keywords: ['geometry', 'line', 'circle', tag.toLowerCase()],
-    };
+    });
     setMistakeQuestions((prev) => [newEntry, ...prev]);
   };
 
@@ -221,7 +245,7 @@ export default function App() {
   };
 
   const handleRestorePresets = () => {
-    setMistakeQuestions(PRESET_EXAM_PROBLEMS);
+    setMistakeQuestions(PRESET_EXAM_PROBLEMS.map(normalizeMistakeQuestion));
   };
 
   const handleToggleMastered = (id: string) => {
@@ -239,12 +263,10 @@ export default function App() {
   return (
     <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans text-sm sm:text-base selection:bg-sky-100 selection:text-sky-900">
       {/* 
-        TOP BAR CONTRACT:
-        Zone 1: Wordmark
-        Zone 2: Text navigation links
-        Zone 3: Actions
+        TOP BAR:
+        Tailored for iPhone 13 (390×844) & mobile screens - no overflow, no clipped buttons
       */}
-      <header className="flex items-center justify-between gap-2 sm:gap-6 px-3 sm:px-6 py-2.5 sm:py-3.5 border-b border-slate-200 bg-white sticky top-0 z-40">
+      <header className="flex items-center justify-between gap-2 px-3 sm:px-6 py-2.5 sm:py-3.5 border-b border-slate-200 bg-white sticky top-0 z-40">
         {/* Zone 1: Wordmark */}
         <a
           href="/"
@@ -253,8 +275,8 @@ export default function App() {
           <div className="w-6 h-6 sm:w-7 sm:h-7 rounded bg-slate-900 text-white flex items-center justify-center text-xs font-bold font-mono">
             d
           </div>
-          <span className="hidden xs:inline">{t.appName}</span>
-          <span className="xs:hidden font-bold">{t.appShortName || '几何助手'}</span>
+          <span className="hidden sm:inline">{t.appName}</span>
+          <span className="sm:hidden font-bold text-sm">直线与圆</span>
         </a>
 
         {/* Zone 2: Navigation links */}
@@ -311,7 +333,7 @@ export default function App() {
           </button>
         </nav>
 
-        {/* Zone 3: Language Selector + Primary Action */}
+        {/* Zone 3: Language Selector + Primary Action (Responsive on 390px) */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           {/* Language Switcher */}
           <div className="relative flex items-center">
@@ -334,7 +356,8 @@ export default function App() {
             className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-white bg-slate-900 rounded-md hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0 shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="hidden xs:inline">{t.btnAddNotebook}</span>
+            <span className="hidden sm:inline">{t.btnAddNotebook}</span>
+            <span className="sm:hidden">{lang === 'zh' ? '存题' : 'Save'}</span>
           </button>
         </div>
       </header>
@@ -543,12 +566,12 @@ export default function App() {
             onRestorePresets={handleRestorePresets}
             onToggleMastered={handleToggleMastered}
             onUpdateNote={handleUpdateNote}
-            onImportQuestions={(imported) => setMistakeQuestions(imported)}
+            onImportQuestions={(imported) => setMistakeQuestions(imported.map(normalizeMistakeQuestion))}
             onOpenSaveModal={() => setIsSaveModalOpen(true)}
           />
         )}
 
-        {/* VIEW 4: EXAM FORMULAS & CHEAT SHEET WITH MINIMAL NUMERICAL EXAMPLES (Requirement 5) */}
+        {/* VIEW 4: EXAM FORMULAS & CHEAT SHEET WITH MINIMAL NUMERICAL EXAMPLES */}
         {activeNav === 'cheatsheet' && (
           <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-8 space-y-6">
             <div>

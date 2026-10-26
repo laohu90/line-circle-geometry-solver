@@ -132,13 +132,13 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
       const centerScreen = mathToScreen(analysis.x0, analysis.y0);
       const distToCenter = Math.hypot(sx - centerScreen.x, sy - centerScreen.y);
 
-      if (distToCenter < 16 && onUpdateCenter) {
+      if (distToCenter < 20 && onUpdateCenter) {
         setActiveDragTarget('center');
         return;
       }
 
       const circleScreenRadius = analysis.r * scale;
-      if (Math.abs(distToCenter - circleScreenRadius) < 12 && onUpdateRadius) {
+      if (Math.abs(distToCenter - circleScreenRadius) < 14 && onUpdateRadius) {
         setActiveDragTarget('radius');
         return;
       }
@@ -216,13 +216,13 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
         const centerScreen = mathToScreen(analysis.x0, analysis.y0);
         const distToCenter = Math.hypot(sx - centerScreen.x, sy - centerScreen.y);
 
-        if (distToCenter < 24 && onUpdateCenter) {
+        if (distToCenter < 28 && onUpdateCenter) {
           setActiveDragTarget('center');
           return;
         }
 
         const circleScreenRadius = analysis.r * scale;
-        if (Math.abs(distToCenter - circleScreenRadius) < 18 && onUpdateRadius) {
+        if (Math.abs(distToCenter - circleScreenRadius) < 20 && onUpdateRadius) {
           setActiveDragTarget('radius');
           return;
         }
@@ -485,60 +485,60 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
       ref={containerRef}
       className="relative w-full h-full min-h-[360px] sm:min-h-[480px] bg-white border border-slate-200 rounded-lg overflow-hidden select-none touch-none"
     >
-      {/* Floating Toolbar (responsive on 375~420px mobile screens) */}
-      <div className="absolute top-2.5 left-2.5 z-10 flex flex-wrap items-center gap-1 p-1 bg-white/95 backdrop-blur-sm border border-slate-200 rounded-md shadow-xs max-w-[calc(100%-20px)] sm:max-w-none">
+      {/* Floating Toolbar (responsive on iPhone 13 390px) */}
+      <div className="absolute top-2 left-2 z-10 flex items-center gap-1 p-1 bg-white/95 backdrop-blur-sm border border-slate-200 rounded-md shadow-xs">
         <button
           onClick={() => setScale((s) => Math.min(130, s * 1.2))}
           title={t?.canvasZoomIn || 'Zoom In'}
-          className="p-1 sm:p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer"
+          className="p-1 sm:p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer shrink-0"
         >
           <ZoomIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </button>
         <button
           onClick={() => setScale((s) => Math.max(10, s / 1.2))}
           title={t?.canvasZoomOut || 'Zoom Out'}
-          className="p-1 sm:p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer"
+          className="p-1 sm:p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer shrink-0"
         >
           <ZoomOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </button>
         <button
           onClick={resetView}
           title={t?.canvasResetView || 'Reset View'}
-          className="p-1 sm:p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer"
+          className="p-1 sm:p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer shrink-0"
         >
           <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </button>
         <button
           onClick={handleExportSvg}
           title={t?.btnExportSvg || 'Export Diagram'}
-          className="p-1 sm:p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer"
+          className="p-1 sm:p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer shrink-0"
         >
           <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </button>
         <div className="w-[1px] h-3.5 bg-slate-200 mx-0.5" />
         <button
           onClick={() => setShowAuxLines(!showAuxLines)}
-          className={`px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-medium flex items-center gap-1 rounded transition-colors cursor-pointer ${
+          className={`px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-medium flex items-center gap-1 rounded transition-colors cursor-pointer shrink-0 ${
             showAuxLines ? 'bg-sky-50 text-sky-700' : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
           <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-          <span className="hidden xs:inline">{t?.canvasAuxToggle || 'Aux'}</span>
+          <span className="hidden sm:inline">{t?.canvasAuxToggle || 'Aux'}</span>
         </button>
         <button
           onClick={() => setShowExtrema(!showExtrema)}
-          className={`px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-medium flex items-center gap-1 rounded transition-colors cursor-pointer ${
+          className={`px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-medium flex items-center gap-1 rounded transition-colors cursor-pointer shrink-0 ${
             showExtrema ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
           <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-          <span className="hidden xs:inline">{t?.canvasExtremaToggle || 'Extrema'}</span>
+          <span className="hidden sm:inline">{t?.canvasExtremaToggle || 'Extrema'}</span>
         </button>
       </div>
 
       {/* Floating Status / Legend */}
       {hasBoth && (
-        <div className="absolute top-12 sm:top-2.5 right-2.5 z-10 flex flex-col gap-0.5 sm:gap-1 p-2 sm:p-2.5 bg-white/95 backdrop-blur-sm border border-slate-200 rounded-md shadow-xs text-xs">
+        <div className="absolute top-12 sm:top-2 right-2 z-10 flex flex-col gap-0.5 sm:gap-1 p-1.5 sm:p-2 bg-white/95 backdrop-blur-sm border border-slate-200 rounded-md shadow-xs text-xs">
           <div className="flex items-center gap-1.5">
             <span
               className={`w-2 h-2 rounded-full shrink-0 ${
@@ -568,7 +568,7 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
         </div>
       )}
 
-      {/* SVG Canvas */}
+      {/* SVG Canvas with full touch support */}
       <svg
         ref={svgRef}
         className="w-full h-full cursor-grab active:cursor-grabbing"
@@ -778,7 +778,7 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
       </svg>
 
       <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-[11px] text-slate-500 pointer-events-none">
-        <span className="truncate">{t?.canvasHint || 'Touch/Wheel to zoom · Drag to pan'}</span>
+        <span className="truncate">单指拖动平移 · 双指捏合缩放</span>
         <span className="font-mono shrink-0 ml-1">{t?.canvasScale || 'Scale:'} {scale < 25 ? '5' : scale < 50 ? '2' : '1'}u</span>
       </div>
     </div>

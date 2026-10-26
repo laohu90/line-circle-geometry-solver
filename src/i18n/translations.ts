@@ -1125,9 +1125,9 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationSchema> = {
     keywordsTagDisjoint: '相离与最值',
     keywordsTagSquare: '配方法化简',
     keywordsTagChord: '垂径定理',
-    keywordsTagExtrema: '距离极值',
+    keywordsTagExtrema: '最值距离',
     keywordsTagExam: '高考真题',
-    keywordsTagVertical: '垂直特殊线 x=c',
+    keywordsTagVertical: '竖直线防坑',
 
     cheatTitle: '高中解析几何 · 直线与圆高频必考核心模型',
     cheatSub: '高考填空压轴秒杀模型、严谨分类防坑指南与双解法汇总',
