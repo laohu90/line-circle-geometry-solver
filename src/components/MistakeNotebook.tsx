@@ -44,12 +44,18 @@ interface MistakeNotebookProps {
 export function formatTagText(tag: string): string {
   if (!tag) return '';
   const trimmed = tag.trim();
+  const lower = trimmed.toLowerCase();
+
   if (
     trimmed === 'Secant & Chord' ||
     trimmed === 'Secante y Cuerda' ||
     trimmed === 'Sécante et Corde' ||
     trimmed === 'Secante e Corda' ||
-    trimmed === '相交弦长'
+    trimmed === '相交弦长' ||
+    trimmed === '相交与弦长' ||
+    (lower.includes('secant') && !lower.includes('perpendicular')) ||
+    (lower.includes('chord') && !lower.includes('perpendicular') && !lower.includes('垂径')) ||
+    lower.includes('相交')
   ) {
     return '相交与弦长';
   }
@@ -58,7 +64,12 @@ export function formatTagText(tag: string): string {
     trimmed === 'Tangente y Contacto' ||
     trimmed === 'Tangente et Contact' ||
     trimmed === 'Tangente e Contato' ||
-    trimmed === '切线验证'
+    trimmed === '切线验证' ||
+    trimmed === '相切与切线' ||
+    lower.includes('tangent') ||
+    lower.includes('contact') ||
+    lower.includes('相切') ||
+    lower.includes('切线')
   ) {
     return '相切与切线';
   }
@@ -68,7 +79,13 @@ export function formatTagText(tag: string): string {
     trimmed === 'Distances Extrêmes' ||
     trimmed === 'Distâncias Extremas' ||
     trimmed === '最值问题' ||
-    trimmed === '距离极值'
+    trimmed === '距离极值' ||
+    trimmed === '最值距离' ||
+    lower.includes('extrema') ||
+    lower.includes('distancia') ||
+    lower.includes('distance') ||
+    lower.includes('最值') ||
+    lower.includes('极值')
   ) {
     return '最值距离';
   }
@@ -78,7 +95,12 @@ export function formatTagText(tag: string): string {
     trimmed === 'Droite Verticale x=c' ||
     trimmed === 'Reta Vertical x=c' ||
     trimmed === '垂直特殊线' ||
-    trimmed === '垂直特殊线 x=c'
+    trimmed === '垂直特殊线 x=c' ||
+    trimmed === '竖直线防坑' ||
+    lower.includes('vertical') ||
+    lower.includes('x=c') ||
+    lower.includes('竖直') ||
+    lower.includes('斜率不存在')
   ) {
     return '竖直线防坑';
   }
@@ -87,16 +109,81 @@ export function formatTagText(tag: string): string {
     trimmed === 'Cuerda Perpendicular' ||
     trimmed === 'Corde Perpendiculaire' ||
     trimmed === 'Corda Perpendicular' ||
-    trimmed === '参数逆推'
+    trimmed === '参数逆推' ||
+    trimmed === '垂径定理' ||
+    lower.includes('perpendicular') ||
+    lower.includes('垂径') ||
+    lower.includes('逆推')
   ) {
     return '垂径定理';
   }
   return trimmed;
 }
 
-// Format note with fully translated Chinese prefixes
+// Format note with fully translated Chinese prefixes & complete canonical presets
 export function formatNoteText(text: string): string {
   if (!text) return '';
+  const trimmed = text.trim();
+  const lower = trimmed.toLowerCase();
+
+  // Full note replacement for presets
+  if (
+    lower.includes('when calculating chord length') ||
+    lower.includes('chord length formula is l = 2') ||
+    lower.includes('la longitud de la cuerda es l = 2') ||
+    lower.includes('la formule de la corde est l = 2') ||
+    lower.includes('o comprimento da corda é l = 2') ||
+    (lower.startsWith('pitfall') && lower.includes('chord')) ||
+    trimmed.includes('求弦长时切记')
+  ) {
+    return '易错坑点：求弦长时切记是 L = 2√(R² - d²)，很多同学考场上一紧张漏乘了 2，误把半弦长当成了全弦长！';
+  }
+
+  if (
+    lower.includes('extreme distances from circle to line') ||
+    lower.includes('las distancias extremas siempre satisfacen') ||
+    lower.includes('les distances extrêmes vérifient') ||
+    lower.includes('as distâncias extremas sempre satisfazem') ||
+    (lower.startsWith('core principle') && lower.includes('distance')) ||
+    trimmed.includes('圆上点到直线的距离极值恒满足')
+  ) {
+    return '核心原理：圆上点到直线的距离极值恒满足 d_min = |d - R|，d_max = d + R。圆心过垂线即可找到对应的最近点与最远点。';
+  }
+
+  if (
+    lower.includes('verifying d = r is substantially faster') ||
+    lower.includes('comprobar d = r es mucho más rápido') ||
+    lower.includes('tester d = r est bien plus rapide') ||
+    lower.includes('verificar d = r é muito mais rápido') ||
+    (lower.startsWith('exam strategy') && lower.includes('tangent')) ||
+    trimmed.includes('直线与圆相切的几何条件 d = R')
+  ) {
+    return '考场策略：直线与圆相切的几何条件 d = R 比代数判别式 Δ = 0 计算量小得多，含参题务必优先列出 d = R 解方程！';
+  }
+
+  if (
+    lower.includes('assuming line is y = kx + b misses vertical lines') ||
+    lower.includes('al asumir y = kx + b se olvidan') ||
+    lower.includes('poser y = kx + b fait omettre') ||
+    lower.includes('supor y = kx + b ignora') ||
+    (lower.startsWith('high frequency mistake') && lower.includes('vertical')) ||
+    trimmed.includes('设直线方程为 y = kx + b 时极易漏掉')
+  ) {
+    return '高频陷阱：设直线方程为 y = kx + b 时极易漏掉斜率不存在的特殊直线 x = c，需分类讨论或使用一般式 Ax + By + C = 0！';
+  }
+
+  if (
+    lower.includes('when distance d = 0, the line passes through the center') ||
+    lower.includes('cuando d = 0, la recta pasa por el centro') ||
+    lower.includes('quand d = 0, la droite passe par le centre') ||
+    lower.includes('quando d = 0, a reta passa pelo centro') ||
+    (lower.startsWith('geometric insight') && lower.includes('center')) ||
+    trimmed.includes('当 d = 0 时，直线过圆心')
+  ) {
+    return '几何洞察：当 d = 0 时，直线过圆心，截得弦长恰好为圆的直径 2R，也是所有割线弦长的最大值。';
+  }
+
+  // Prefix replacements for custom entries
   return text
     .replace(/^Pitfall[:：]?\s*/i, '易错坑点：')
     .replace(/^Core Principle[:：]?\s*/i, '核心原理：')
@@ -160,7 +247,17 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
     return map;
   }, [questions]);
 
-  const allTags = useMemo(() => Array.from(tagCounts.keys()), [tagCounts]);
+  const allTags = useMemo(() => {
+    const STANDARD_TAGS = ['相交与弦长', '最值距离', '相切与切线', '竖直线防坑', '垂径定理'];
+    const keys = Array.from(tagCounts.keys());
+    const sorted = STANDARD_TAGS.filter((st) => tagCounts.has(st));
+    for (const k of keys) {
+      if (!sorted.includes(k)) {
+        sorted.push(k);
+      }
+    }
+    return sorted;
+  }, [tagCounts]);
 
   // High-frequency exam keywords in Chinese
   const popularKeywords = [

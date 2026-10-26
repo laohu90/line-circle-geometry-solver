@@ -17,7 +17,7 @@ import { SupportedLanguage, TRANSLATIONS } from './i18n/translations';
 import { analyzeLineAndCircle } from './utils/mathUtils';
 import { GeometryCanvas } from './components/GeometryCanvas';
 import { DetailedSteps } from './components/DetailedSteps';
-import { MistakeNotebook } from './components/MistakeNotebook';
+import { MistakeNotebook, formatTagText, formatNoteText } from './components/MistakeNotebook';
 import { SummaryCard } from './components/SummaryCard';
 import { InputPanel } from './components/InputPanel';
 import { SaveQuestionModal } from './components/SaveQuestionModal';
@@ -33,78 +33,19 @@ import {
 
 // Normalizer to ensure tag & note prefixes are fully translated in Chinese
 function normalizeMistakeQuestion(q: MistakeQuestion): MistakeQuestion {
-  let tag = (q.tag || '').trim();
-  if (
-    tag === 'Secant & Chord' ||
-    tag === 'Secante y Cuerda' ||
-    tag === 'Sécante et Corde' ||
-    tag === 'Secante e Corda' ||
-    tag === '相交弦长'
-  ) {
-    tag = '相交与弦长';
-  } else if (
-    tag === 'Distance Extrema' ||
-    tag === 'Distancias Extremas' ||
-    tag === 'Distances Extrêmes' ||
-    tag === 'Distâncias Extremas' ||
-    tag === '最值问题' ||
-    tag === '距离极值'
-  ) {
-    tag = '最值距离';
-  } else if (
-    tag === 'Tangent & Contact' ||
-    tag === 'Tangente y Contacto' ||
-    tag === 'Tangente et Contact' ||
-    tag === 'Tangente e Contato' ||
-    tag === '切线验证'
-  ) {
-    tag = '相切与切线';
-  } else if (
-    tag === 'Vertical Line x=c' ||
-    tag === 'Recta Vertical x=c' ||
-    tag === 'Droite Verticale x=c' ||
-    tag === 'Reta Vertical x=c' ||
-    tag === '垂直特殊线' ||
-    tag === '垂直特殊线 x=c'
-  ) {
-    tag = '竖直线防坑';
-  } else if (
-    tag === 'Perpendicular Chord' ||
-    tag === 'Cuerda Perpendicular' ||
-    tag === 'Corde Perpendiculaire' ||
-    tag === 'Corda Perpendicular' ||
-    tag === '参数逆推'
-  ) {
-    tag = '垂径定理';
+  // If this is an exam preset problem, directly synchronize its title, tag, and note with the Chinese canonical preset
+  if (q.id && q.id.startsWith('preset-')) {
+    const canonical = PRESET_EXAM_PROBLEMS.find((p) => p.id === q.id);
+    if (canonical) {
+      return {
+        ...canonical,
+        isMastered: q.isMastered ?? canonical.isMastered,
+      };
+    }
   }
 
-  let userNote = q.userNote || '';
-  userNote = userNote
-    .replace(/^Pitfall[:：]?\s*/i, '易错坑点：')
-    .replace(/^Core Principle[:：]?\s*/i, '核心原理：')
-    .replace(/^Exam Strategy[:：]?\s*/i, '考场策略：')
-    .replace(/^High Frequency Mistake[:：]?\s*/i, '高频陷阱：')
-    .replace(/^Geometric Insight[:：]?\s*/i, '几何洞察：')
-    .replace(/^易错警示[:：]?\s*/g, '易错坑点：')
-    .replace(/^考点精髓[:：]?\s*/g, '核心原理：')
-    .replace(/^复习备忘[:：]?\s*/g, '考场策略：')
-    .replace(/^致命陷阱[:：]?\s*/g, '高频陷阱：')
-    .replace(/^特殊几何直观[:：]?\s*/g, '几何洞察：')
-    .replace(/^Trampa[:：]?\s*/i, '易错坑点：')
-    .replace(/^Piège[:：]?\s*/i, '易错坑点：')
-    .replace(/^Pegadinha[:：]?\s*/i, '易错坑点：')
-    .replace(/^Principio Clave[:：]?\s*/i, '核心原理：')
-    .replace(/^Principe Clé[:：]?\s*/i, '核心原理：')
-    .replace(/^Princípio Chave[:：]?\s*/i, '核心原理：')
-    .replace(/^Estrategia de Examen[:：]?\s*/i, '考场策略：')
-    .replace(/^Stratégie d'Examen[:：]?\s*/i, '考场策略：')
-    .replace(/^Estratégia de Prova[:：]?\s*/i, '考场策略：')
-    .replace(/^Error Frecuente[:：]?\s*/i, '高频陷阱：')
-    .replace(/^Erreur Fréquente[:：]?\s*/i, '高频陷阱：')
-    .replace(/^Erro Frequente[:：]?\s*/i, '高频陷阱：')
-    .replace(/^Visión Geométrica[:：]?\s*/i, '几何洞察：')
-    .replace(/^Intuition Géométrique[:：]?\s*/i, '几何洞察：')
-    .replace(/^Intuição Geométrica[:：]?\s*/i, '几何洞察：');
+  const tag = formatTagText(q.tag || '') || '相交与弦长';
+  const userNote = formatNoteText(q.userNote || '');
 
   return { ...q, tag, userNote };
 }
@@ -178,12 +119,20 @@ export default function App() {
   const [circleDisabled, setCircleDisabled] = useState(false);
   const [lineDisabled, setLineDisabled] = useState(false);
 
-  // Mistake Notebook stored in LocalStorage
+  // Mistake Notebook stored in LocalStorage (v3 enforces 100% translated tags & notes)
   const [mistakeQuestions, setMistakeQuestions] = useState<MistakeQuestion[]>(() => {
     try {
-      const saved = localStorage.getItem('geometry_mistake_notebook_v2');
-      if (saved) {
-        const parsed = JSON.parse(saved);
+      const savedV3 = localStorage.getItem('geometry_mistake_notebook_v3');
+      if (savedV3) {
+        const parsed = JSON.parse(savedV3);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(normalizeMistakeQuestion);
+        }
+      }
+      // Migrate from older versions if present
+      const savedLegacy = localStorage.getItem('geometry_mistake_notebook_v2') || localStorage.getItem('geometry_mistake_notebook');
+      if (savedLegacy) {
+        const parsed = JSON.parse(savedLegacy);
         if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed.map(normalizeMistakeQuestion);
         }
@@ -197,10 +146,12 @@ export default function App() {
   // Save Modal open state
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
 
-  // Sync to LocalStorage
+  // Sync to LocalStorage v3 and cleanup legacy caches
   useEffect(() => {
     try {
-      localStorage.setItem('geometry_mistake_notebook_v2', JSON.stringify(mistakeQuestions));
+      localStorage.setItem('geometry_mistake_notebook_v3', JSON.stringify(mistakeQuestions));
+      localStorage.removeItem('geometry_mistake_notebook_v2');
+      localStorage.removeItem('geometry_mistake_notebook');
     } catch {
       // ignore
     }
