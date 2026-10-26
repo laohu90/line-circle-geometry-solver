@@ -14,6 +14,7 @@ export interface TranslationSchema {
   navCanvas: string;
   navNotebook: string;
   navCheatsheet: string;
+  navToolbox: string;
   btnAddNotebook: string;
   btnReset: string;
   btnCopySolution: string;
@@ -64,6 +65,7 @@ export interface TranslationSchema {
   btnQuickParse: string;
   quickParseSuccess: string;
   quickParseError: string;
+  quickParseEmptyError: string;
 
   // Parameter Slider / Dynamic Explorer
   sliderTitle: string;
@@ -119,6 +121,23 @@ export interface TranslationSchema {
   intersectionCoordsTitle: string;
   extremaDistancesTitle: string;
   trianglePropertiesTitle: string;
+  noChordTriangle: string;
+  areaTriangleOAB: string;
+  subtendedAngle: string;
+  footPerpendicularDesc: string;
+  distanceFormulaExplanation: string;
+
+  // High School Geometry Toolbox
+  toolboxTitle: string;
+  toolboxSub: string;
+  toolPointCircleTitle: string;
+  toolPointCircleDesc: string;
+  toolTangentTitle: string;
+  toolTangentDesc: string;
+  toolTwoCirclesTitle: string;
+  toolTwoCirclesDesc: string;
+  toolMidpointChordTitle: string;
+  toolMidpointChordDesc: string;
 
   // Notebook
   notebookTitle: string;
@@ -196,6 +215,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationSchema> = {
     navCanvas: 'Interactive Canvas',
     navNotebook: 'Problem Notebook',
     navCheatsheet: 'Formulas & Cheatsheet',
+    navToolbox: 'Geometry Toolbox',
     btnAddNotebook: 'Save Problem',
     btnReset: 'Reset',
     btnCopySolution: 'Copy Solution',
@@ -243,6 +263,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationSchema> = {
     btnQuickParse: 'Auto Parse',
     quickParseSuccess: 'Successfully parsed and updated equations!',
     quickParseError: 'Could not recognize equation format. Please check syntax.',
+    quickParseEmptyError: 'Please enter an equation (e.g. x^2+y^2-2x+4y-4=0 or 3x+4y-12=0).',
 
     sliderTitle: 'Dynamic Parameter Exploration',
     sliderSub: 'Drag the parameter slider to observe live transitions between Secant, Tangent, and Disjoint states',
@@ -295,6 +316,22 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationSchema> = {
     intersectionCoordsTitle: 'Exact Coordinates of Intersection / Contact Points:',
     extremaDistancesTitle: 'Extreme Distances from Points on Circle to the Line:',
     trianglePropertiesTitle: 'Chord Triangle Geometric Properties:',
+    noChordTriangle: 'Line does not intersect circle; no chord triangle formed.',
+    areaTriangleOAB: 'Area of △OAB:',
+    subtendedAngle: 'Subtended Angle θ:',
+    footPerpendicularDesc: 'Foot of perpendicular from center onto line (Chord Midpoint M):',
+    distanceFormulaExplanation: 'The numerator is the absolute value of the line evaluated at center; denominator is the normal vector magnitude.',
+
+    toolboxTitle: 'Advanced High School Geometry Toolbox',
+    toolboxSub: 'Essential college-entrance exam models: Tangents, Point-to-Circle Extrema, Two-Circle Relations & Midpoint Chords',
+    toolPointCircleTitle: 'Point vs. Circle & Extrema',
+    toolPointCircleDesc: 'Determine if a point P(x, y) is inside, on, or outside the circle, and compute min/max distances to the circumference.',
+    toolTangentTitle: 'Circle Tangent Solver',
+    toolTangentDesc: 'Find tangent equations from a point on or outside the circle, tangent lengths, and chord of contact.',
+    toolTwoCirclesTitle: 'Two Circles Positional Relation',
+    toolTwoCirclesDesc: 'Analyze 5 positional relationships (exterior, externally tangent, secant, internally tangent, interior) and common chord line.',
+    toolMidpointChordTitle: 'Midpoint Chord & Point Difference (点差法)',
+    toolMidpointChordDesc: 'Given chord midpoint M(x_m, y_m), determine the chord line equation using k_OM · k_AB = -1.',
 
     notebookTitle: 'Problem Notebook & Exam Collection',
     notebookSub: 'Save difficult problems, record common pitfalls, search keywords, and export printable sheets',
@@ -366,6 +403,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationSchema> = {
     navCanvas: 'Lienzo Interactivo',
     navNotebook: 'Cuaderno de Problemas',
     navCheatsheet: 'Fórmulas y Chuleta',
+    navToolbox: 'Herramientas Geométricas',
     btnAddNotebook: 'Guardar Problema',
     btnReset: 'Reiniciar',
     btnCopySolution: 'Copiar Solución',
@@ -413,6 +451,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationSchema> = {
     btnQuickParse: 'Auto Reconocer',
     quickParseSuccess: '¡Ecuaciones reconocidas y actualizadas con éxito!',
     quickParseError: 'No se pudo reconocer el formato. Revisa la sintaxis.',
+    quickParseEmptyError: 'Por favor, introduce una ecuación (ej. x^2+y^2-2x+4y-4=0 o 3x+4y-12=0).',
 
     sliderTitle: 'Exploración Paramétrica Dinámica',
     sliderSub: 'Mueve el control deslizante para observar transiciones continuas entre Secante, Tangente y Exterior',
@@ -465,6 +504,22 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationSchema> = {
     intersectionCoordsTitle: 'Coordenadas Exactas de Puntos de Intersección o Tangencia:',
     extremaDistancesTitle: 'Distancias Extremas desde Puntos de la Circunferencia a la Recta:',
     trianglePropertiesTitle: 'Propiedades Geométricas del Triángulo de la Cuerda:',
+    noChordTriangle: 'La recta no corta la circunferencia; no se forma triángulo de cuerda.',
+    areaTriangleOAB: 'Área de △OAB:',
+    subtendedAngle: 'Ángulo subtendido θ:',
+    footPerpendicularDesc: 'Pie de la perpendicular desde el centro a la recta (Punto medio de la cuerda M):',
+    distanceFormulaExplanation: 'El numerador es el valor absoluto de la recta evaluada en el centro; el denominador es el módulo del vector normal.',
+
+    toolboxTitle: 'Caja de Herramientas Geométricas Avanzadas',
+    toolboxSub: 'Modelos esenciales para selectividad: Tangentes, Extremos punto-circunferencia, Relación entre dos circunferencias y Cuerda media',
+    toolPointCircleTitle: 'Punto y Circunferencia (Posición y Extremos)',
+    toolPointCircleDesc: 'Determina si un punto P(x, y) es interior, sobre o exterior a la circunferencia, y calcula distancias mínima y máxima.',
+    toolTangentTitle: 'Resolución de Rectas Tangentes',
+    toolTangentDesc: 'Obtén ecuaciones de tangentes desde un punto sobre o exterior a la circunferencia, longitud del segmento tangente y cuerda de contacto.',
+    toolTwoCirclesTitle: 'Posición Relativa de Dos Circunferencias',
+    toolTwoCirclesDesc: 'Clasifica las 5 posiciones relativas (exteriores, tangentes exteriores, secantes, tangentes interiores, interiores) y halla la recta del eje radical / cuerda común.',
+    toolMidpointChordTitle: 'Cuerda con Punto Medio Conocido (Método de Diferencias)',
+    toolMidpointChordDesc: 'Dado el punto medio M(x_m, y_m), deduce la ecuación de la cuerda mediante k_OM · k_AB = -1.',
 
     notebookTitle: 'Cuaderno de Problemas y Errores',
     notebookSub: 'Guarda problemas complejos, anota trampas habituales, busca por palabras clave y exporta hojas de estudio',
@@ -536,6 +591,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationSchema> = {
     navCanvas: 'Plan Interactif',
     navNotebook: 'Cahier d\'Exercices',
     navCheatsheet: 'Formules et Fiche Mémo',
+    navToolbox: 'Boîte à Outils',
     btnAddNotebook: 'Sauvegarder l\'Exercice',
     btnReset: 'Réinitialiser',
     btnCopySolution: 'Copier la Solution',
@@ -583,6 +639,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationSchema> = {
     btnQuickParse: 'Reconnaissance Auto',
     quickParseSuccess: 'Équations reconnues et synchronisées avec succès !',
     quickParseError: 'Format non reconnu. Veuillez vérifier la syntaxe.',
+    quickParseEmptyError: 'Veuillez entrer une équation (ex. x^2+y^2-2x+4y-4=0 ou 3x+4y-12=0).',
 
     sliderTitle: 'Exploration Paramétrique Dynamique',
     sliderSub: 'Déplacez le curseur pour observer les transitions directes entre Sécante, Tangente et Extérieure',
@@ -635,6 +692,22 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationSchema> = {
     intersectionCoordsTitle: 'Coordonnées Exactes des Points d\'Intersection ou de Contact :',
     extremaDistancesTitle: 'Distances Extrêmes entre les Points du Cercle et la Droite :',
     trianglePropertiesTitle: 'Propriétés Géométriques du Triangle de la Corde :',
+    noChordTriangle: 'La droite ne coupe pas le cercle ; aucun triangle de corde n\'est formé.',
+    areaTriangleOAB: 'Aire de △OAB :',
+    subtendedAngle: 'Angle sous-tendu θ :',
+    footPerpendicularDesc: 'Pied de la perpendiculaire menée du centre sur la droite (Milieu de la corde M) :',
+    distanceFormulaExplanation: 'Le numérateur est la valeur absolue de l\'équation de la droite évaluée au centre ; le dénominateur est la norme du vecteur normal.',
+
+    toolboxTitle: 'Boîte à Outils de Géométrie Analytique',
+    toolboxSub: 'Modèles incontournables des épreuves : Tangentes, Extrêmes point-cercle, Deux cercles et Corde moyenne',
+    toolPointCircleTitle: 'Point et Cercle (Position et Extrêmes)',
+    toolPointCircleDesc: 'Déterminez si un point P(x, y) est intérieur, sur ou extérieur au cercle, et calculez les distances min/max.',
+    toolTangentTitle: 'Équations des Droites Tangentes',
+    toolTangentDesc: 'Trouvez les tangentes depuis un point sur ou hors du cercle, la longueur de tangente et la corde de contact.',
+    toolTwoCirclesTitle: 'Position Relative de Deux Cercles',
+    toolTwoCirclesDesc: 'Analysez les 5 positions relatives (extérieurs, tangents extérieurs, sécants, tangents intérieurs, intérieurs) et l\'axe radical / corde commune.',
+    toolMidpointChordTitle: 'Corde de Milieu Donné (Méthode des Différences)',
+    toolMidpointChordDesc: 'Connaissant le milieu M(x_m, y_m), déterminez l\'équation de la corde via k_OM · k_AB = -1.',
 
     notebookTitle: 'Cahier d\'Erreurs et d\'Exercices',
     notebookSub: 'Enregistrez les exercices difficiles, annotez vos pièges, recherchez par mots-clés et imprimez des fiches',
@@ -706,6 +779,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationSchema> = {
     navCanvas: 'Plano Interativo',
     navNotebook: 'Caderno de Exercícios',
     navCheatsheet: 'Fórmulas e Resumo',
+    navToolbox: 'Ferramentas Geométricas',
     btnAddNotebook: 'Salvar Exercício',
     btnReset: 'Redefinir',
     btnCopySolution: 'Copiar Solução',
@@ -753,6 +827,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationSchema> = {
     btnQuickParse: 'Reconhecer Auto',
     quickParseSuccess: 'Equações reconhecidas e sincronizadas com sucesso!',
     quickParseError: 'Formato não reconhecido. Verifique a sintaxe.',
+    quickParseEmptyError: 'Por favor, insira uma equação (ex. x^2+y^2-2x+4y-4=0 ou 3x+4y-12=0).',
 
     sliderTitle: 'Exploração Paramétrica Dinâmica',
     sliderSub: 'Mova o controle deslizante para observar a transição entre Secante, Tangente e Exterior',
@@ -805,6 +880,22 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationSchema> = {
     intersectionCoordsTitle: 'Coordenadas Exatas dos Pontos de Interseção ou Tangência:',
     extremaDistancesTitle: 'Distâncias Extremas de Pontos da Circunferência até a Reta:',
     trianglePropertiesTitle: 'Propriedades Geométricas do Triângulo da Corda:',
+    noChordTriangle: 'A reta não intersecta a circunferência; nenhum triângulo de corda é formado.',
+    areaTriangleOAB: 'Área de △OAB:',
+    subtendedAngle: 'Ângulo subtendido θ:',
+    footPerpendicularDesc: 'Pé da perpendicular traçada do centro sobre a reta (Ponto médio da corda M):',
+    distanceFormulaExplanation: 'O numerador é o valor absoluto da reta avaliada no centro; o denominador é a norma do vetor normal.',
+
+    toolboxTitle: 'Caixa de Ferramentas Geométricas Avançadas',
+    toolboxSub: 'Modelos essenciais para ENEM e vestibulares: Tangentes, Extremos ponto-círculo, Posição entre duas circunferências e Ponto médio de corda',
+    toolPointCircleTitle: 'Ponto e Circunferência (Posição e Extremos)',
+    toolPointCircleDesc: 'Determine se um ponto P(x, y) é interno, pertencente ou externo à circunferência, e calcule distâncias mín/máx.',
+    toolTangentTitle: 'Equações de Retas Tangentes',
+    toolTangentDesc: 'Obtenha equações de tangentes traçadas por um ponto na circunferência ou externo, comprimento do segmento tangente e corda de contato.',
+    toolTwoCirclesTitle: 'Posição Relativa de Duas Circunferências',
+    toolTwoCirclesDesc: 'Analise as 5 posições relativas (exteriores, tangentes exteriores, secantes, tangentes interiores, interiores) e a equação da corda comum / eixo radical.',
+    toolMidpointChordTitle: 'Corda com Ponto Médio Conhecido (Método das Diferenças)',
+    toolMidpointChordDesc: 'Dado o ponto médio M(x_m, y_m), determine a reta suporte da corda através de k_OM · k_AB = -1.',
 
     notebookTitle: 'Caderno de Erros e Questões',
     notebookSub: 'Salve questões complexas, anote pegadinhas de vestibular, pesquise palavras-chave e imprima folhas de treino',
@@ -876,6 +967,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationSchema> = {
     navCanvas: '几何交互画板',
     navNotebook: '错题与压轴本',
     navCheatsheet: '考点与秒杀公式',
+    navToolbox: '高中压轴工具箱',
     btnAddNotebook: '加入错题本',
     btnReset: '重置',
     btnCopySolution: '复制解答',
@@ -923,6 +1015,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationSchema> = {
     btnQuickParse: '智能识别',
     quickParseSuccess: '已成功智能识别并更新方程参数！',
     quickParseError: '无法识别方程格式，请检查输入符号。',
+    quickParseEmptyError: '请输入方程（例如 x^2+y^2-2x+4y-4=0 或 3x+4y-12=0）。',
 
     sliderTitle: '含参动态探索器',
     sliderSub: '拖动参数滑块，实时观察相交、相切临界值及相离的连续演变过程',
@@ -975,6 +1068,22 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationSchema> = {
     intersectionCoordsTitle: '交点与切点精确坐标：',
     extremaDistancesTitle: '圆上动点到直线的最值距离：',
     trianglePropertiesTitle: '弦三角形几何特征：',
+    noChordTriangle: '直线与圆不相交，无法构成弦三角形。',
+    areaTriangleOAB: '△OAB 面积：',
+    subtendedAngle: '弦所对圆心角 θ：',
+    footPerpendicularDesc: '圆心向直线所作垂足坐标（即弦中点 M）：',
+    distanceFormulaExplanation: '分子为圆心坐标代入直线方程的绝对值，分母为法向量模长。',
+
+    toolboxTitle: '高中几何压轴工具箱',
+    toolboxSub: '高考必考四大模型：圆的切线与切点弦方程、点与圆位置及距离最值、两圆五大位置关系与公共弦方程、弦中点与点差法',
+    toolPointCircleTitle: '点与圆位置关系及最值',
+    toolPointCircleDesc: '秒判点 P(x, y) 在圆内/圆上/圆外，一键计算点到圆的最短距离、最大距离以及切线长。',
+    toolTangentTitle: '求圆的切线与切点弦方程',
+    toolTangentDesc: '支持过圆上一点求切线、过圆外一点求两条切线方程、切点坐标、切线长及切点弦方程。',
+    toolTwoCirclesTitle: '两圆位置关系与公共弦方程',
+    toolTwoCirclesDesc: '对比圆心距与两圆半径之和/差判定外离、外切、相交、内切、内含，两圆相交时秒求公共弦直线方程及公共弦长。',
+    toolMidpointChordTitle: '点差法与已知弦中点求直线',
+    toolMidpointChordDesc: '已知弦中点 M(x_m, y_m)，运用点差法推导 k_OM · k_AB = -1，快速求出弦所在直线方程与斜率。',
 
     notebookTitle: '高中解析几何 · 错题与压轴本',
     notebookSub: '支持一键归档、易错考点反思、关键词高亮检索、纸质试卷打印与备份',

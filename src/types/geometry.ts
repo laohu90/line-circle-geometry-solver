@@ -20,6 +20,8 @@ export interface StandardCircleInput {
 export interface Point2D {
   x: number;
   y: number;
+  xLatex?: string;
+  yLatex?: string;
 }
 
 export type LineInputMode = 'general' | 'slopeIntercept' | 'twoPoints' | 'pointSlope';
@@ -88,6 +90,8 @@ export interface PositionalAnalysis {
   chordLength?: number;
   halfChordLength?: number;
   chordLengthLatex?: string;
+  fullChordExactLatex?: string;
+  exactIntersectionsLatex?: string;
   
   // Algebraic comparison (Method 2: 联立消元法)
   algebraicDelta?: number;

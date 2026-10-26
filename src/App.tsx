@@ -21,6 +21,7 @@ import { MistakeNotebook } from './components/MistakeNotebook';
 import { SummaryCard } from './components/SummaryCard';
 import { InputPanel } from './components/InputPanel';
 import { SaveQuestionModal } from './components/SaveQuestionModal';
+import { AdvancedGeometryToolbox } from './components/AdvancedGeometryToolbox';
 import { PRESET_EXAM_PROBLEMS } from './data/presetProblems';
 import { MathView } from './components/MathView';
 import {
@@ -66,8 +67,8 @@ export default function App() {
     }
   };
 
-  // Navigation active tab: 'solver' | 'canvas' | 'notebook' | 'cheatsheet'
-  const [activeNav, setActiveNav] = useState<'solver' | 'canvas' | 'notebook' | 'cheatsheet'>('solver');
+  // Navigation active tab: 'solver' | 'canvas' | 'toolbox' | 'notebook' | 'cheatsheet'
+  const [activeNav, setActiveNav] = useState<'solver' | 'canvas' | 'toolbox' | 'notebook' | 'cheatsheet'>('solver');
 
   // Circle State (default: x^2 + y^2 - 4x + 2y - 4 = 0 => (x-2)^2 + (y+1)^2 = 9, R = 3)
   const [circleMode, setCircleMode] = useState<CircleInputMode>('general');
@@ -256,6 +257,16 @@ export default function App() {
             {t.navCanvas}
           </button>
           <button
+            onClick={() => setActiveNav('toolbox')}
+            className={`hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 ${
+              activeNav === 'toolbox'
+                ? 'text-slate-900 font-semibold underline underline-offset-8 decoration-2 decoration-sky-600'
+                : ''
+            }`}
+          >
+            {t.navToolbox}
+          </button>
+          <button
             onClick={() => setActiveNav('notebook')}
             className={`hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 ${
               activeNav === 'notebook'
@@ -322,6 +333,14 @@ export default function App() {
           }`}
         >
           {t.navCanvas}
+        </button>
+        <button
+          onClick={() => setActiveNav('toolbox')}
+          className={`px-2.5 py-1 rounded whitespace-nowrap ${
+            activeNav === 'toolbox' ? 'bg-white text-slate-900 shadow-xs font-semibold' : ''
+          }`}
+        >
+          {t.navToolbox}
         </button>
         <button
           onClick={() => setActiveNav('notebook')}
@@ -462,6 +481,17 @@ export default function App() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* VIEW: ADVANCED GEOMETRY TOOLBOX */}
+        {activeNav === 'toolbox' && (
+          <AdvancedGeometryToolbox
+            initialX0={analysis.x0}
+            initialY0={analysis.y0}
+            initialR={analysis.r}
+            t={t}
+            lang={lang}
+          />
         )}
 
         {/* VIEW 3: MISTAKE NOTEBOOK & QUESTION BANK */}

@@ -17,6 +17,11 @@ import { MathView } from './MathView';
 import { Sparkles, RotateCcw, Sliders, Wand2, Check, AlertCircle } from 'lucide-react';
 import { PRESET_EXAM_PROBLEMS } from '../data/presetProblems';
 import { parseMathEquation } from '../utils/equationParser';
+import {
+  formatCircleGeneral,
+  formatCircleStandard,
+  formatLineEquation,
+} from '../utils/exactMath';
 
 interface InputPanelProps {
   circleMode: CircleInputMode;
@@ -75,21 +80,46 @@ export const InputPanel: React.FC<InputPanelProps> = ({
     }
   };
 
+  // Bidirectional sync when editing general circle
+  const handleGeneralCircleChange = (key: 'D' | 'E' | 'F', val: number) => {
+    const updated = { ...generalCircle, [key]: val };
+    setGeneralCircle(updated);
+    const discVal = updated.D ** 2 + updated.E ** 2 - 4 * updated.F;
+    const x0 = -updated.D / 2;
+    const y0 = -updated.E / 2;
+    const r = discVal > 0 ? Math.sqrt(discVal) / 2 : 0;
+    setStandardCircle({ x0, y0, r });
+  };
+
+  // Bidirectional sync when editing standard circle
+  const handleStandardCircleChange = (key: 'x0' | 'y0' | 'r', val: number) => {
+    const updated = { ...standardCircle, [key]: val };
+    setStandardCircle(updated);
+    const D = -2 * updated.x0;
+    const E = -2 * updated.y0;
+    const F = updated.x0 ** 2 + updated.y0 ** 2 - updated.r ** 2;
+    setGeneralCircle({ D, E, F });
+  };
+
   // Quick Parse submission
   const handleQuickParse = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!rawEquation.trim()) return;
+    if (!rawEquation.trim()) {
+      setParseFeedback({ type: 'error', msg: t.quickParseEmptyError });
+      setTimeout(() => setParseFeedback(null), 3500);
+      return;
+    }
 
     const res = parseMathEquation(rawEquation);
     if (res) {
       if (res.circle) {
-        if (res.circle.mode === 'general' && res.circle.general) {
-          setCircleMode('general');
+        if (res.circle.general) {
           setGeneralCircle(res.circle.general);
-        } else if (res.circle.mode === 'standard' && res.circle.standard) {
-          setCircleMode('standard');
+        }
+        if (res.circle.standard) {
           setStandardCircle(res.circle.standard);
         }
+        setCircleMode(res.circle.mode);
       }
       if (res.line) {
         if (res.line.mode === 'slopeIntercept' && res.line.slope) {
@@ -282,7 +312,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
                   step="any"
                   value={generalCircle.D}
                   onChange={(e) =>
-                    setGeneralCircle((prev) => ({ ...prev, D: parseFloat(e.target.value) || 0 }))
+                    handleGeneralCircleChange('D', parseFloat(e.target.value) || 0)
                   }
                   className="w-full px-3 py-1.5 text-xs sm:text-sm text-slate-800 bg-white border border-slate-200 rounded-md focus:outline-none focus:border-sky-500 font-mono"
                 />
@@ -294,7 +324,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
                   step="any"
                   value={generalCircle.E}
                   onChange={(e) =>
-                    setGeneralCircle((prev) => ({ ...prev, E: parseFloat(e.target.value) || 0 }))
+                    handleGeneralCircleChange('E', parseFloat(e.target.value) || 0)
                   }
                   className="w-full px-3 py-1.5 text-xs sm:text-sm text-slate-800 bg-white border border-slate-200 rounded-md focus:outline-none focus:border-sky-500 font-mono"
                 />
@@ -306,7 +336,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
                   step="any"
                   value={generalCircle.F}
                   onChange={(e) =>
-                    setGeneralCircle((prev) => ({ ...prev, F: parseFloat(e.target.value) || 0 }))
+                    handleGeneralCircleChange('F', parseFloat(e.target.value) || 0)
                   }
                   className="w-full px-3 py-1.5 text-xs sm:text-sm text-slate-800 bg-white border border-slate-200 rounded-md focus:outline-none focus:border-sky-500 font-mono"
                 />
@@ -317,9 +347,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
             <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-md text-xs sm:text-sm">
               <span className="text-slate-500">{t.currentEquation}</span>
               <MathView
-                math={`x^2 + y^2 ${generalCircle.D >= 0 ? '+' : ''}${generalCircle.D}x ${
-                  generalCircle.E >= 0 ? '+' : ''
-                }${generalCircle.E}y ${generalCircle.F >= 0 ? '+' : ''}${generalCircle.F} = 0`}
+                math={formatCircleGeneral(generalCircle.D, generalCircle.E, generalCircle.F)}
                 className="font-medium"
               />
             </div>
@@ -346,7 +374,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
                   step="any"
                   value={standardCircle.x0}
                   onChange={(e) =>
-                    setStandardCircle((prev) => ({ ...prev, x0: parseFloat(e.target.value) || 0 }))
+                    handleStandardCircleChange('x0', parseFloat(e.target.value) || 0)
                   }
                   className="w-full px-3 py-1.5 text-xs sm:text-sm text-slate-800 bg-white border border-slate-200 rounded-md focus:outline-none focus:border-sky-500 font-mono"
                 />
@@ -358,7 +386,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
                   step="any"
                   value={standardCircle.y0}
                   onChange={(e) =>
-                    setStandardCircle((prev) => ({ ...prev, y0: parseFloat(e.target.value) || 0 }))
+                    handleStandardCircleChange('y0', parseFloat(e.target.value) || 0)
                   }
                   className="w-full px-3 py-1.5 text-xs sm:text-sm text-slate-800 bg-white border border-slate-200 rounded-md focus:outline-none focus:border-sky-500 font-mono"
                 />
@@ -371,10 +399,10 @@ export const InputPanel: React.FC<InputPanelProps> = ({
                   min="0.1"
                   value={standardCircle.r}
                   onChange={(e) =>
-                    setStandardCircle((prev) => ({
-                      ...prev,
-                      r: Math.max(0.1, parseFloat(e.target.value) || 0.1),
-                    }))
+                    handleStandardCircleChange(
+                      'r',
+                      Math.max(0.1, parseFloat(e.target.value) || 0.1)
+                    )
                   }
                   className="w-full px-3 py-1.5 text-xs sm:text-sm text-slate-800 bg-white border border-slate-200 rounded-md focus:outline-none focus:border-sky-500 font-mono"
                 />
@@ -384,9 +412,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
             <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-md text-xs sm:text-sm">
               <span className="text-slate-500">{t.currentEquation}</span>
               <MathView
-                math={`(x - ${standardCircle.x0})^2 + (y - ${standardCircle.y0})^2 = ${(
-                  standardCircle.r * standardCircle.r
-                ).toFixed(2)}`}
+                math={formatCircleStandard(standardCircle.x0, standardCircle.y0, standardCircle.r)}
                 className="font-medium"
               />
             </div>
@@ -468,9 +494,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
             <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-md text-xs sm:text-sm">
               <span className="text-slate-500">{t.currentLineEquation}</span>
               <MathView
-                math={`${generalLine.A}x ${generalLine.B >= 0 ? '+' : ''}${generalLine.B}y ${
-                  generalLine.C >= 0 ? '+' : ''
-                }${generalLine.C} = 0`}
+                math={formatLineEquation(generalLine.A, generalLine.B, generalLine.C)}
                 className="font-medium"
               />
             </div>

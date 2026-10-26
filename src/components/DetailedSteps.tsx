@@ -165,7 +165,7 @@ ${analysis.relation === 'intersecting' ? `5. Chord Length:\n   L = 2 * sqrt(R^2 
               <div className="text-xs sm:text-sm text-slate-600">
                 {t.currentLineEquation}
                 <MathView
-                  math={`${toFractionLatex(analysis.A)}x + ${toFractionLatex(analysis.B)}y + ${toFractionLatex(analysis.C)} = 0`}
+                  math={analysis.A !== undefined ? `${analysis.A}x ${analysis.B >= 0 ? '+' : ''}${analysis.B}y ${analysis.C >= 0 ? '+' : ''}${analysis.C} = 0` : ''}
                   className="mx-1.5 font-semibold"
                 />
                 , {t.metricCenter} =
@@ -183,14 +183,13 @@ ${analysis.relation === 'intersecting' ? `5. Chord Length:\n   L = 2 * sqrt(R^2 
                   <MathView math={`d = \\frac{|Ax_0 + By_0 + C|}{\\sqrt{A^2 + B^2}}`} block />
                   <MathView math={`d = ${analysis.distanceFractionLatex}`} block />
                   <MathView
-                    math={`d = ${toFractionLatex(analysis.distance)} \\approx ${analysis.distance.toFixed(4)}`}
+                    math={`d = ${analysis.distanceExactLatex} \\approx ${analysis.distance.toFixed(4)}`}
                     block
                   />
                 </div>
                 <div className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  分子为绝对值代入结果，分母为法向量模长
-                  <MathView math="\sqrt{A^2+B^2}" className="mx-1" />
-                  。
+                  {t.distanceFormulaExplanation}
+                  <MathView math="\\sqrt{A^2+B^2}" className="mx-1" />
                 </div>
               </div>
 
@@ -199,7 +198,7 @@ ${analysis.relation === 'intersecting' ? `5. Chord Length:\n   L = 2 * sqrt(R^2 
                 <div>
                   <span className="font-semibold text-amber-900">{t.pointFootLabel} (Chord Midpoint M):</span>
                   <div className="text-slate-600 mt-0.5">
-                    Foot of perpendicular from center onto line:
+                    {t.footPerpendicularDesc}
                   </div>
                 </div>
                 <div className="font-mono font-semibold text-slate-900 text-base">
@@ -375,7 +374,7 @@ ${analysis.relation === 'intersecting' ? `5. Chord Length:\n   L = 2 * sqrt(R^2 
                         block
                       />
                       <MathView
-                        math={`L = \\sqrt{1 + k^2}|x_1 - x_2| = \\sqrt{1 + k^2}\\frac{\\sqrt{\\Delta}}{|a|} = ${toFractionLatex(analysis.chordLength || 0)}`}
+                        math={`L = \\sqrt{1 + k^2}|x_1 - x_2| = \\sqrt{1 + k^2}\\frac{\\sqrt{\\Delta}}{|a|} = ${analysis.fullChordExactLatex || toFractionLatex(analysis.chordLength || 0)}`}
                         block
                         className="font-bold text-slate-900 text-base"
                       />
@@ -386,13 +385,18 @@ ${analysis.relation === 'intersecting' ? `5. Chord Length:\n   L = 2 * sqrt(R^2 
             </div>
 
             {/* Intersections list */}
-            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm space-y-1.5">
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm space-y-2">
               <span className="font-semibold text-slate-900">{t.intersectionCoordsTitle}</span>
+              {analysis.exactIntersectionsLatex && (
+                <div className="bg-white p-2.5 rounded border border-slate-200 overflow-x-auto text-center font-mono">
+                  <MathView math={`(x, y) = ${analysis.exactIntersectionsLatex}`} />
+                </div>
+              )}
               <div className="flex flex-wrap gap-4 pt-1 font-mono text-sm">
                 {analysis.intersectionPoints.map((p, i) => (
                   <span key={i} className="text-slate-800">
                     {i === 0 ? 'Point A: ' : 'Point B: '}
-                    <MathView math={`(${toFractionLatex(p.x)}, ${toFractionLatex(p.y)})`} />
+                    <MathView math={p.xLatex && p.yLatex ? `(${p.xLatex}, ${p.yLatex})` : `(${toFractionLatex(p.x)}, ${toFractionLatex(p.y)})`} />
                     <span className="text-slate-500 text-xs ml-1.5">
                       ({p.x.toFixed(3)}, {p.y.toFixed(3)})
                     </span>
@@ -434,16 +438,16 @@ ${analysis.relation === 'intersecting' ? `5. Chord Length:\n   L = 2 * sqrt(R^2 
                 {analysis.relation === 'intersecting' && analysis.chordLength ? (
                   <div className="space-y-1 text-slate-600">
                     <div>
-                      {t.metricDistance}: <MathView math={`d = ${toFractionLatex(analysis.distance)}`} />
+                      {t.metricDistance}: <MathView math={`d = ${analysis.distanceExactLatex}`} />
                     </div>
                     <div>
-                      Area of △OAB:
+                      {t.areaTriangleOAB}
                       <MathView
                         math={`S = \\frac{1}{2} d \\cdot L = ${toFractionLatex(0.5 * analysis.distance * analysis.chordLength)}`}
                       />
                     </div>
                     <div>
-                      Subtended Angle θ:
+                      {t.subtendedAngle}
                       <MathView
                         math={`\\theta \\approx ${(
                           (2 * Math.asin((analysis.chordLength / (2 * analysis.r))) * 180) /
@@ -454,7 +458,7 @@ ${analysis.relation === 'intersecting' ? `5. Chord Length:\n   L = 2 * sqrt(R^2 
                   </div>
                 ) : (
                   <p className="text-slate-500">
-                    Line does not intersect circle; no chord triangle formed.
+                    {t.noChordTriangle}
                   </p>
                 )}
               </div>
