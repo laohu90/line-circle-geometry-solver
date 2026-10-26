@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Primary Page Title & Meta Description (Google SEO Optimized) -->
+    <title>Line & Circle Solver – Positional Relation & Chord Length Calculator</title>
+    <meta
+      name="description"
+      content="Free online analytical geometry solver: determine if a line and circle are secant, tangent, or disjoint. Features step-by-step completing the square, distance from center to line, chord length calculator, and KaTeX math steps."
+    />
+    <meta
+      name="keywords"
+      content="line and circle positional relationship, chord length calculator, completing the square circle, distance from point to line formula, secant tangent disjoint circle, analytical geometry solver, recta y circunferencia, cuerda geometrica, position relative droite cercle, 直线与圆位置关系, 弦长公式, 配方法"
+    />
+    <meta name="author" content="Line & Circle Geometry Solver" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+
+    <!-- OpenGraph Metadata for Social Shares (Facebook, LinkedIn, Discord, Slack) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Line & Circle Geometry Solver" />
+    <meta property="og:title" content="Line & Circle Solver – Positional Relation & Chord Length Calculator" />
+    <meta
+      property="og:description"
+      content="Determine secant, tangent, or disjoint relationship between a line and circle with complete algebraic derivations, chord lengths, and interactive geometry canvas."
+    />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="es_ES" />
+    <meta property="og:locale:alternate" content="fr_FR" />
+    <meta property="og:locale:alternate" content="pt_BR" />
+    <meta property="og:locale:alternate" content="zh_CN" />
+
+    <!-- Twitter / X Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Line & Circle Solver – Positional Relation & Chord Length Calculator" />
+    <meta
+      name="twitter:description"
+      content="Step-by-step analytical geometry solver: completing the square, center distance d vs radius R, chord length formulas, and interactive canvas."
+    />
+
+    <!-- Google Web Fonts & KaTeX CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Serif+SC:wght@500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+
+    <!-- Schema.org Structured Data 1: WebApplication (Educational Software) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Line & Circle Geometry Solver",
+      "alternateName": ["直线与圆位置关系判定器", "Analizador Recta y Circunferencia", "Analyseur Droite et Cercle"],
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "All",
+      "browserRequirements": "Requires JavaScript. Requires HTML5.",
+      "description": "Interactive analytical geometry calculator to determine positional relations (secant, tangent, disjoint) between straight lines and circles with step-by-step completing the square and chord length derivations.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Step-by-step Completing the Square breakdown",
+        "Point-to-line perpendicular distance formula derivation",
+        "Perpendicular chord theorem and chord length formula L = 2√(R² - d²)",
+        "Algebraic quadratic elimination and Vieta's formulas comparison",
+        "Interactive Cartesian geometry canvas with live drag and zoom",
+        "Mistake Notebook and exam problem collection with printable sheets",
+        "Multilingual support in English, Spanish, French, Portuguese, and Chinese"
+      ]
+    }
+    </script>
+
+    <!-- Schema.org Structured Data 2: FAQPage for Rich Search Results -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do you determine if a line and circle are secant, tangent, or disjoint?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Calculate the perpendicular distance d from the circle's center (x₀, y₀) to the line Ax + By + C = 0 using d = |Ax₀ + By₀ + C| / √(A² + B²). Compare d to radius R: if d < R, they are secant (2 intersection points); if d = R, they are tangent (1 contact point); if d > R, they are disjoint (no intersections)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the formula for the chord length intercepted by a secant line on a circle?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "By the perpendicular chord theorem, the radius R, center distance d, and half-chord L/2 form a right triangle: R² = d² + (L/2)². Solving for chord length gives L = 2√(R² - d²)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do you complete the square for a general circle equation x² + y² + Dx + Ey + F = 0?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Group x and y terms separately: (x² + Dx) + (y² + Ey) = -F. Add (D/2)² and (E/2)² to both sides to form perfect squares: (x + D/2)² + (y + E/2)² = (D² + E² - 4F) / 4. The center is (-D/2, -E/2) and the radius is R = √(D² + E² - 4F) / 2, provided D² + E² - 4F > 0."
+          }
+        }
+      ]
+    }
+    </script>
+  </head>
+  <body class="bg-white text-slate-900 antialiased selection:bg-sky-100 selection:text-sky-900">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "直线与圆位置关系判定器",
+  "description": "高中几何压轴填空解题助手：快速验证圆心距与半径大小，支持配方法拆解、直线与圆相交/相切/相离判定、弦长判别器、LaTeX公式步骤推演与错题本管理。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
