@@ -216,24 +216,24 @@ export function analyzeLineAndCircle(
 
       const step4Texts: Record<SupportedLanguage, { title: string; exp: string }> = {
         en: {
-          title: 'Step 4: Discriminant Check & Extracting Center and Radius',
-          exp: `Discriminant is strictly positive (>0), confirming a real circle. Center O(-D/2, -E/2) = (${formatNum(x0)}, ${formatNum(y0)}), Radius R = ${radR.latex}.`,
+          title: 'Step 4: Existence Condition Check & Circle Parameters',
+          exp: `Existence condition D² + E² - 4F = ${formatNum(discriminantCircle)} > 0 confirms a valid real circle. Center O(-D/2, -E/2) = (${formatNum(x0)}, ${formatNum(y0)}), Radius R = ${radR.latex}. (Note: If = 0, degenerates to a single point; if < 0, imaginary circle).`,
         },
         es: {
           title: 'Paso 4: Verificación del Discriminante y Extracción de Centro y Radio',
-          exp: `El discriminante es positivo (>0), confirmando una circunferencia real. Centro O(-D/2, -E/2) = (${formatNum(x0)}, ${formatNum(y0)}), Radio R = ${radR.latex}.`,
+          exp: `D² + E² - 4F = ${formatNum(discriminantCircle)} > 0 confirma una circunferencia real. Centro O(-D/2, -E/2) = (${formatNum(x0)}, ${formatNum(y0)}), Radio R = ${radR.latex}. (Si es 0, degenera en un punto; si es negativo, no hay lugar geométrico real).`,
         },
         fr: {
           title: 'Étape 4 : Test du Discriminant et Déduction du Centre et Rayon',
-          exp: `Le discriminant est strictement positif (>0), attestant d'un cercle réel. Centre O(-D/2, -E/2) = (${formatNum(x0)}, ${formatNum(y0)}), Rayon R = ${radR.latex}.`,
+          exp: `D² + E² - 4F = ${formatNum(discriminantCircle)} > 0 atteste d'un cercle réel. Centre O(-D/2, -E/2) = (${formatNum(x0)}, ${formatNum(y0)}), Rayon R = ${radR.latex}. (Si nul, dégénère en un point ; si négatif, cercle imaginaire).`,
         },
         pt: {
           title: 'Passo 4: Verificação do Discriminante e Extração de Centro e Raio',
-          exp: `O discriminante é estritamente positivo (>0), confirmando uma circunferência real. Centro O(-D/2, -E/2) = (${formatNum(x0)}, ${formatNum(y0)}), Raio R = ${radR.latex}.`,
+          exp: `D² + E² - 4F = ${formatNum(discriminantCircle)} > 0 confirma uma circunferência real. Centro O(-D/2, -E/2) = (${formatNum(x0)}, ${formatNum(y0)}), Raio R = ${radR.latex}. (Se for 0, degenera em um ponto; se negativo, circunferência imaginária).`,
         },
         zh: {
-          title: '第 4 步：判别式检验与确定圆心及半径',
-          exp: `判别式大于 0，方程表示真正的圆。圆心 O(-D/2, -E/2) = (${formatNum(x0)}, ${formatNum(y0)})，半径 R = ${radR.latex}。`,
+          title: '第 4 步：充要条件检验与确定圆心及半径',
+          exp: `充要条件检验：D² + E² - 4F = ${formatNum(discriminantCircle)} > 0，方程表示有效实圆。圆心 O(-D/2, -E/2) = (${formatNum(x0)}, ${formatNum(y0)})，半径 R = ${radR.latex}。（注：若 D² + E² - 4F = 0 则退化为点圆/单点；若 < 0 则为虚圆无实数轨迹）。`,
         },
       };
 
@@ -244,10 +244,28 @@ export function analyzeLineAndCircle(
       });
     } else if (Math.abs(discriminantCircle) <= 1e-7) {
       isValidCircle = false;
-      circleStatusMsg = `D² + E² - 4F = 0 (${formatNum(x0)}, ${formatNum(y0)})`;
+      circleStatusMsg = lang === 'zh'
+        ? `D² + E² - 4F = 0（退化为点圆，坐标为 (${formatNum(x0)}, ${formatNum(y0)})）`
+        : `D² + E² - 4F = 0 (Degenerates to a point (${formatNum(x0)}, ${formatNum(y0)}))`;
+      completeSquareSteps.push({
+        title: lang === 'zh' ? '第 4 步：充要条件检验（退化为点圆）' : 'Step 4: Existence Condition Check',
+        latex: `D^2 + E^2 - 4F = ${formatNum(discriminantCircle)} = 0`,
+        explanation: lang === 'zh'
+          ? `充要条件判定：D² + E² - 4F = 0，方程退化为点圆（表示单点 (${formatNum(x0)}, ${formatNum(y0)})，半径 R = 0）。`
+          : `Existence condition: D² + E² - 4F = 0 degenerates to a single point (${formatNum(x0)}, ${formatNum(y0)}) with radius 0.`,
+      });
     } else {
       isValidCircle = false;
-      circleStatusMsg = `D² + E² - 4F = ${formatNum(discriminantCircle)} < 0`;
+      circleStatusMsg = lang === 'zh'
+        ? `D² + E² - 4F = ${formatNum(discriminantCircle)} < 0（虚圆，无实数轨迹）`
+        : `D² + E² - 4F = ${formatNum(discriminantCircle)} < 0 (Imaginary circle)`;
+      completeSquareSteps.push({
+        title: lang === 'zh' ? '第 4 步：充要条件检验（无实数轨迹）' : 'Step 4: Existence Condition Check',
+        latex: `D^2 + E^2 - 4F = ${formatNum(discriminantCircle)} < 0`,
+        explanation: lang === 'zh'
+          ? `充要条件判定：D² + E² - 4F < 0，方程无实数解，表示虚圆。`
+          : `Existence condition: D² + E² - 4F < 0, no real locus exists.`,
+      });
     }
   }
 

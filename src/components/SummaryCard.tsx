@@ -8,15 +8,46 @@ import { PositionalAnalysis } from '../types/geometry';
 import { TranslationSchema } from '../i18n/translations';
 import { MathView } from './MathView';
 import { toFractionLatex } from '../utils/mathUtils';
-import { Sparkles, BookmarkPlus, Compass } from 'lucide-react';
+import { Sparkles, BookmarkPlus, Compass, AlertCircle } from 'lucide-react';
 
 interface SummaryCardProps {
   analysis: PositionalAnalysis;
+  circleDisabled?: boolean;
+  lineDisabled?: boolean;
   t: TranslationSchema;
   onOpenSaveModal: () => void;
 }
 
-export const SummaryCard: React.FC<SummaryCardProps> = ({ analysis, t, onOpenSaveModal }) => {
+export const SummaryCard: React.FC<SummaryCardProps> = ({
+  analysis,
+  circleDisabled = false,
+  lineDisabled = false,
+  t,
+  onOpenSaveModal,
+}) => {
+  // If one of the equations is disabled/missing
+  if (circleDisabled || lineDisabled) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gradient-to-r from-sky-50/50 to-white">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+            <Compass className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-sm font-bold text-slate-900">
+              {circleDisabled ? '已载入直线参数 · 等待输入圆方程' : '已载入圆参数 · 等待输入直线方程'}
+            </div>
+            <div className="text-xs text-slate-500 mt-0.5">
+              {circleDisabled
+                ? '请在下方圆方程栏或智能识别框中输入圆的方程，以开启几何距离判定与割线弦长求解。'
+                : '请在下方直线方程栏或智能识别框中输入直线方程，以开启几何距离判定与割线弦长求解。'}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Localized verdict label
   const verdictText =
     analysis.relation === 'intersecting'
@@ -26,7 +57,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ analysis, t, onOpenSav
       : t.verdictDisjoint;
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-5 sm:p-6 space-y-4">
+    <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-6 space-y-4">
       {/* Top Header & Verdict Badge */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div>
@@ -66,7 +97,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ analysis, t, onOpenSav
 
           <button
             onClick={onOpenSaveModal}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-white bg-slate-900 rounded-md hover:bg-slate-800 transition-colors whitespace-nowrap shadow-xs"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-white bg-slate-900 rounded-md hover:bg-slate-800 transition-colors whitespace-nowrap shadow-xs cursor-pointer"
           >
             <BookmarkPlus className="w-4 h-4" />
             <span>{t.btnAddNotebook}</span>
@@ -75,11 +106,11 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ analysis, t, onOpenSav
       </div>
 
       {/* 4 Metric Columns */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 text-sm">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 text-sm">
         {/* Metric 1: Center O */}
-        <div className="p-3.5 bg-slate-50/70 border border-slate-100 rounded-md">
-          <span className="text-slate-500 text-xs sm:text-sm block mb-1">{t.metricCenter}</span>
-          <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
+        <div className="p-3 sm:p-3.5 bg-slate-50/70 border border-slate-100 rounded-md min-w-0">
+          <span className="text-slate-500 text-xs sm:text-sm block mb-1 truncate">{t.metricCenter}</span>
+          <div className="text-base sm:text-lg font-bold text-slate-900 font-mono truncate">
             <MathView math={`(${toFractionLatex(analysis.x0)}, ${toFractionLatex(analysis.y0)})`} />
           </div>
           <span className="text-xs text-slate-400 font-mono block mt-1">
@@ -88,9 +119,9 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ analysis, t, onOpenSav
         </div>
 
         {/* Metric 2: Radius R */}
-        <div className="p-3.5 bg-slate-50/70 border border-slate-100 rounded-md">
-          <span className="text-slate-500 text-xs sm:text-sm block mb-1">{t.metricRadius}</span>
-          <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
+        <div className="p-3 sm:p-3.5 bg-slate-50/70 border border-slate-100 rounded-md min-w-0">
+          <span className="text-slate-500 text-xs sm:text-sm block mb-1 truncate">{t.metricRadius}</span>
+          <div className="text-base sm:text-lg font-bold text-slate-900 font-mono truncate">
             <MathView math={`R = ${toFractionLatex(analysis.r)}`} />
           </div>
           <span className="text-xs text-slate-400 font-mono block mt-1">
@@ -99,9 +130,9 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ analysis, t, onOpenSav
         </div>
 
         {/* Metric 3: Distance d */}
-        <div className="p-3.5 bg-slate-50/70 border border-slate-100 rounded-md">
-          <span className="text-slate-500 text-xs sm:text-sm block mb-1">{t.metricDistance}</span>
-          <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
+        <div className="p-3 sm:p-3.5 bg-slate-50/70 border border-slate-100 rounded-md min-w-0">
+          <span className="text-slate-500 text-xs sm:text-sm block mb-1 truncate">{t.metricDistance}</span>
+          <div className="text-base sm:text-lg font-bold text-slate-900 font-mono truncate">
             <MathView math={`d = ${toFractionLatex(analysis.distance)}`} />
           </div>
           <span className="text-xs text-slate-400 font-mono block mt-1">
@@ -110,15 +141,15 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ analysis, t, onOpenSav
         </div>
 
         {/* Metric 4: Chord or Extrema */}
-        <div className="p-3.5 bg-slate-50/70 border border-slate-100 rounded-md">
-          <span className="text-slate-500 text-xs sm:text-sm block mb-1">
+        <div className="p-3 sm:p-3.5 bg-slate-50/70 border border-slate-100 rounded-md min-w-0">
+          <span className="text-slate-500 text-xs sm:text-sm block mb-1 truncate">
             {analysis.relation === 'intersecting'
               ? t.metricChordOrExtrema
               : analysis.relation === 'tangent'
               ? t.pointTangentLabel
               : t.nearPointLabel}
           </span>
-          <div className="text-base sm:text-lg font-bold text-slate-900 font-mono">
+          <div className="text-base sm:text-lg font-bold text-slate-900 font-mono truncate">
             {analysis.relation === 'intersecting' ? (
               <MathView math={`L = ${toFractionLatex(analysis.chordLength ?? 0)}`} />
             ) : analysis.relation === 'tangent' ? (
@@ -129,7 +160,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ analysis, t, onOpenSav
               <MathView math={`d_{\\min} = ${toFractionLatex(analysis.minDistToLine)}`} />
             )}
           </div>
-          <span className="text-xs text-slate-400 font-mono block mt-1">
+          <span className="text-xs text-slate-400 font-mono block mt-1 truncate">
             {analysis.relation === 'intersecting'
               ? `½ L = ${analysis.halfChordLength?.toFixed(3)}`
               : analysis.relation === 'tangent'
@@ -148,7 +179,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ analysis, t, onOpenSav
           {analysis.relation === 'intersecting' && (
             <span className="ml-1 font-mono font-semibold text-emerald-800">
               L = {analysis.chordLength?.toFixed(3)} ({t.exactValueLabel}:{' '}
-              <MathView math={toFractionLatex(analysis.chordLength ?? 0)} />).
+              <MathView math={toFractionLatex(analysis.chordLength ?? 0)} />). 直线与圆相交，圆上存在点在直线上（d_min = 0）。
             </span>
           )}
         </div>

@@ -22,6 +22,8 @@ import {
   Plus,
   HelpCircle,
   Sparkles,
+  AlertTriangle,
+  RotateCcw,
 } from 'lucide-react';
 
 interface MistakeNotebookProps {
@@ -30,6 +32,8 @@ interface MistakeNotebookProps {
   lang: SupportedLanguage;
   onLoadQuestion: (q: MistakeQuestion) => void;
   onDeleteQuestion: (id: string) => void;
+  onClearAll: () => void;
+  onRestorePresets?: () => void;
   onToggleMastered: (id: string) => void;
   onUpdateNote: (id: string, note: string) => void;
   onImportQuestions: (imported: MistakeQuestion[]) => void;
@@ -39,8 +43,11 @@ interface MistakeNotebookProps {
 export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
   questions,
   t,
+  lang,
   onLoadQuestion,
   onDeleteQuestion,
+  onClearAll,
+  onRestorePresets,
   onToggleMastered,
   onUpdateNote,
   onImportQuestions,
@@ -53,10 +60,21 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
   const [tempNote, setTempNote] = useState('');
   const [showGlossary, setShowGlossary] = useState(false);
 
-  // Extract all distinct tags
-  const allTags = useMemo(() => {
-    return Array.from(new Set(questions.map((q) => q.tag).filter(Boolean)));
+  // Clear confirmation dialog state
+  const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
+
+  // Extract all distinct tags with counts
+  const tagCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const q of questions) {
+      if (q.tag) {
+        map.set(q.tag, (map.get(q.tag) || 0) + 1);
+      }
+    }
+    return map;
   }, [questions]);
+
+  const allTags = useMemo(() => Array.from(tagCounts.keys()), [tagCounts]);
 
   // High-frequency exam keywords
   const popularKeywords = [
@@ -125,14 +143,14 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
             onImportQuestions(parsed);
           }
         } catch {
-          alert('Import failed. Invalid JSON format.');
+          // Fallback ignore invalid json
         }
       };
     }
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-5 sm:p-6 space-y-6">
+    <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-6 space-y-6">
       {/* Top Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
         <div>
@@ -151,7 +169,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setShowGlossary(!showGlossary)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors cursor-pointer ${
               showGlossary ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 bg-white border border-slate-200 hover:bg-slate-50'
             }`}
           >
@@ -160,30 +178,43 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
           </button>
           <button
             onClick={onOpenSaveModal}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-white bg-slate-900 rounded-md hover:bg-slate-800 transition-colors whitespace-nowrap shadow-xs"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-white bg-slate-900 rounded-md hover:bg-slate-800 transition-colors whitespace-nowrap shadow-xs cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>{t.btnSaveCurrent}</span>
           </button>
+
+          {/* Clear All Button with confirmation modal */}
+          {questions.length > 0 && (
+            <button
+              onClick={() => setShowClearConfirmModal(true)}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs sm:text-sm font-medium text-rose-700 bg-rose-50 border border-rose-200 rounded-md hover:bg-rose-100 transition-colors whitespace-nowrap cursor-pointer"
+              title={lang === 'zh' ? '清空错题本' : 'Clear All'}
+            >
+              <Trash2 className="w-4 h-4 text-rose-600" />
+              <span>{lang === 'zh' ? '清空错题本' : 'Clear All'}</span>
+            </button>
+          )}
+
           <button
             onClick={() => window.print()}
             title={t.btnPrint}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap"
+            className="flex items-center gap-1 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap cursor-pointer"
           >
             <Printer className="w-4 h-4" />
-            <span>{t.btnPrint}</span>
+            <span className="hidden sm:inline">{t.btnPrint}</span>
           </button>
           <button
             onClick={handleExportJSON}
             title={t.btnExportJson}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap"
+            className="flex items-center gap-1 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap cursor-pointer"
           >
             <Download className="w-4 h-4" />
-            <span>{t.btnExportJson}</span>
+            <span className="hidden sm:inline">{t.btnExportJson}</span>
           </button>
           <label className="flex items-center gap-1 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors cursor-pointer whitespace-nowrap">
             <Upload className="w-4 h-4" />
-            <span>{t.btnImportJson}</span>
+            <span className="hidden sm:inline">{t.btnImportJson}</span>
             <input type="file" accept=".json" onChange={handleImportFile} className="hidden" />
           </label>
         </div>
@@ -222,7 +253,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
         </div>
       )}
 
-      {/* Filter and Search Bar with Quick Keywords */}
+      {/* Filter and Search Bar */}
       <div className="space-y-3">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           {/* Search Input */}
@@ -237,12 +268,12 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
             />
           </div>
 
-          {/* Mastered & Tag Selectors */}
+          {/* Mastered Filter & Tag Selectors */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-md text-xs sm:text-sm">
+            <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-md text-xs sm:text-sm shrink-0">
               <button
                 onClick={() => setMasteredFilter('all')}
-                className={`px-3 py-1 font-medium rounded transition-colors whitespace-nowrap ${
+                className={`px-3 py-1 font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
                   masteredFilter === 'all'
                     ? 'bg-white text-slate-900 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -252,7 +283,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
               </button>
               <button
                 onClick={() => setMasteredFilter('unmastered')}
-                className={`px-3 py-1 font-medium rounded transition-colors whitespace-nowrap ${
+                className={`px-3 py-1 font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
                   masteredFilter === 'unmastered'
                     ? 'bg-white text-rose-700 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -262,7 +293,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
               </button>
               <button
                 onClick={() => setMasteredFilter('mastered')}
-                className={`px-3 py-1 font-medium rounded transition-colors whitespace-nowrap ${
+                className={`px-3 py-1 font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
                   masteredFilter === 'mastered'
                     ? 'bg-white text-emerald-700 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -272,36 +303,77 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
               </button>
             </div>
 
-            {/* Tag Filter */}
+            {/* Tag Filter Dropdown */}
             <select
               value={selectedTag}
               onChange={(e) => setSelectedTag(e.target.value)}
-              className="px-3 py-1.5 text-xs sm:text-sm text-slate-700 bg-white border border-slate-200 rounded-md focus:outline-none focus:border-sky-500"
+              className="px-2.5 py-1.5 text-xs sm:text-sm text-slate-700 bg-white border border-slate-200 rounded-md focus:outline-none focus:border-sky-500 cursor-pointer shrink-0"
             >
               <option value="all">{t.filterAllTags}</option>
               {allTags.map((tag) => (
                 <option key={tag} value={tag}>
-                  {tag}
+                  {tag} ({tagCounts.get(tag) || 0})
                 </option>
               ))}
             </select>
           </div>
         </div>
 
-        {/* Popular Keyword Chips for Quick Search */}
-        <div className="flex items-center gap-2 overflow-x-auto text-xs pb-1">
-          <span className="text-slate-400 flex items-center gap-1 shrink-0">
+        {/* Item 6: Interactive Tag Filter Chips Bar */}
+        <div className="flex items-center gap-1.5 overflow-x-auto text-xs pb-1 pt-1">
+          <span className="text-slate-400 flex items-center gap-1 shrink-0 font-medium">
             <Tag className="w-3.5 h-3.5" />
-            <span>Keywords:</span>
+            <span>{lang === 'zh' ? '标签筛选:' : 'Tags:'}</span>
+          </span>
+
+          <button
+            onClick={() => setSelectedTag('all')}
+            className={`px-2.5 py-1 rounded-full transition-colors whitespace-nowrap font-medium cursor-pointer ${
+              selectedTag === 'all'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            {lang === 'zh' ? '全部' : 'All'} ({questions.length})
+          </button>
+
+          {allTags.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => setSelectedTag(selectedTag === tag ? 'all' : tag)}
+              className={`px-2.5 py-1 rounded-full transition-colors whitespace-nowrap font-medium cursor-pointer ${
+                selectedTag === tag
+                  ? 'bg-sky-600 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              {tag} ({tagCounts.get(tag) || 0})
+            </button>
+          ))}
+
+          {selectedTag !== 'all' && (
+            <button
+              onClick={() => setSelectedTag('all')}
+              className="text-xs text-sky-600 hover:underline shrink-0 ml-1.5 cursor-pointer font-medium"
+            >
+              {lang === 'zh' ? '清除标签' : 'Clear tag'}
+            </button>
+          )}
+        </div>
+
+        {/* Popular Keyword Chips for Quick Search */}
+        <div className="flex items-center gap-1.5 overflow-x-auto text-xs pb-1">
+          <span className="text-slate-400 shrink-0 font-medium">
+            {lang === 'zh' ? '高频考点:' : 'Keywords:'}
           </span>
           {popularKeywords.map((kw, i) => (
             <button
               key={i}
               onClick={() => setSearchQuery(searchQuery === kw.query ? '' : kw.query)}
-              className={`px-2.5 py-1 rounded transition-colors whitespace-nowrap font-medium ${
+              className={`px-2 py-0.5 rounded transition-colors whitespace-nowrap font-medium cursor-pointer ${
                 searchQuery.toLowerCase() === kw.query
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                  ? 'bg-slate-800 text-white'
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
               }`}
             >
               {kw.label}
@@ -310,9 +382,9 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="text-xs text-sky-600 hover:underline shrink-0 ml-1"
+              className="text-xs text-sky-600 hover:underline shrink-0 ml-1 cursor-pointer"
             >
-              Clear filter
+              {lang === 'zh' ? '清空搜索' : 'Clear search'}
             </button>
           )}
         </div>
@@ -320,18 +392,29 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
 
       {/* Question Cards List */}
       {filtered.length === 0 ? (
-        <div className="py-16 text-center text-slate-500 border border-dashed border-slate-200 rounded-lg space-y-2">
+        <div className="py-14 text-center text-slate-500 border border-dashed border-slate-200 rounded-lg space-y-3">
           <p className="text-sm sm:text-base font-semibold">{t.noQuestionsFound}</p>
           <p className="text-xs sm:text-sm text-slate-400">
             {t.noQuestionsSub}
           </p>
+          {questions.length === 0 && onRestorePresets && (
+            <div className="pt-2">
+              <button
+                onClick={onRestorePresets}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>{lang === 'zh' ? '恢复默认经典高考题库' : 'Restore Default Questions'}</span>
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {filtered.map((item) => (
             <div
               key={item.id}
-              className={`border rounded-lg p-5 transition-all bg-white hover:border-slate-300 ${
+              className={`border rounded-lg p-4 sm:p-5 transition-all bg-white hover:border-slate-300 ${
                 item.isMastered ? 'border-slate-200' : 'border-slate-300 ring-1 ring-slate-200/50'
               }`}
             >
@@ -341,7 +424,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
                   <button
                     onClick={() => onToggleMastered(item.id)}
                     title={item.isMastered ? t.statusUnmastered : t.statusMastered}
-                    className="text-slate-400 hover:text-emerald-600 transition-colors shrink-0"
+                    className="text-slate-400 hover:text-emerald-600 transition-colors shrink-0 cursor-pointer"
                   >
                     {item.isMastered ? (
                       <CheckCircle2 className="w-5 h-5 text-emerald-600" />
@@ -355,9 +438,13 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500">
-                  <span className="font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                  <button
+                    onClick={() => setSelectedTag(item.tag)}
+                    className="font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded transition-colors cursor-pointer"
+                    title={lang === 'zh' ? `按此标签筛选: ${item.tag}` : `Filter by tag: ${item.tag}`}
+                  >
                     {highlightMatch(item.tag, searchQuery)}
-                  </span>
+                  </button>
                   <span aria-hidden="true">·</span>
                   <span className="font-mono text-xs">{item.date}</span>
                 </div>
@@ -400,7 +487,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => setEditingNoteId(null)}
-                        className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded"
+                        className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded cursor-pointer"
                       >
                         {t.btnCancel}
                       </button>
@@ -409,7 +496,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
                           onUpdateNote(item.id, tempNote);
                           setEditingNoteId(null);
                         }}
-                        className="px-3 py-1.5 text-xs font-medium text-white bg-slate-900 rounded hover:bg-slate-800"
+                        className="px-3 py-1.5 text-xs font-medium text-white bg-slate-900 rounded hover:bg-slate-800 cursor-pointer"
                       >
                         {t.btnSaveNote}
                       </button>
@@ -431,7 +518,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
                         setTempNote(item.userNote);
                       }}
                       title={t.btnEditNote}
-                      className="text-slate-400 hover:text-slate-700 shrink-0 p-1"
+                      className="text-slate-400 hover:text-slate-700 shrink-0 p-1 cursor-pointer"
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>
@@ -452,7 +539,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => onLoadQuestion(item)}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-sky-700 bg-sky-50 rounded-md hover:bg-sky-100 transition-colors"
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-sky-700 bg-sky-50 rounded-md hover:bg-sky-100 transition-colors cursor-pointer"
                   >
                     <span>{t.btnLoadIntoSolver}</span>
                     <ArrowUpRight className="w-4 h-4" />
@@ -460,7 +547,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
                   <button
                     onClick={() => onDeleteQuestion(item.id)}
                     title={t.btnDelete}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md hover:bg-slate-100 transition-colors"
+                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -468,6 +555,46 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Clear All Confirmation Dialog Modal */}
+      {showClearConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="bg-white rounded-lg max-w-sm w-full p-5 sm:p-6 shadow-xl border border-slate-200 space-y-4">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-rose-600" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900">
+                {lang === 'zh' ? '确定清空错题本？' : 'Clear Mistake Notebook?'}
+              </h3>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              {lang === 'zh'
+                ? '此操作将永久清空您保存的全部题目与易错反思记录，清空后无法撤销。'
+                : 'This will permanently remove all saved questions and notes from your local notebook.'}
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowClearConfirmModal(false)}
+                className="px-4 py-2 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                {t.btnCancel}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onClearAll();
+                  setShowClearConfirmModal(false);
+                }}
+                className="px-4 py-2 text-xs sm:text-sm font-medium text-white bg-rose-600 rounded-md hover:bg-rose-700 transition-colors shadow-xs cursor-pointer"
+              >
+                {lang === 'zh' ? '确认清空' : 'Confirm Clear'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

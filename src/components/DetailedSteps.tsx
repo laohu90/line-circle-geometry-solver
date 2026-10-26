@@ -8,18 +8,52 @@ import { PositionalAnalysis } from '../types/geometry';
 import { TranslationSchema, SupportedLanguage } from '../i18n/translations';
 import { MathView } from './MathView';
 import { toFractionLatex } from '../utils/mathUtils';
-import { Copy, Check, Sparkles, BookOpen } from 'lucide-react';
+import { Copy, Check, Sparkles, BookOpen, AlertCircle } from 'lucide-react';
 
 interface DetailedStepsProps {
   analysis: PositionalAnalysis;
   circleType: 'general' | 'standard';
+  circleDisabled?: boolean;
+  lineDisabled?: boolean;
   t: TranslationSchema;
   lang: SupportedLanguage;
 }
 
-export const DetailedSteps: React.FC<DetailedStepsProps> = ({ analysis, circleType, t }) => {
+export const DetailedSteps: React.FC<DetailedStepsProps> = ({
+  analysis,
+  circleType,
+  circleDisabled = false,
+  lineDisabled = false,
+  t,
+  lang,
+}) => {
   const [activeTab, setActiveTab] = useState<'all' | 'square' | 'distance' | 'chord' | 'algebraic'>('all');
   const [copied, setCopied] = useState(false);
+
+  // If one of the equations is disabled/missing
+  if (circleDisabled || lineDisabled) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-lg p-5 sm:p-6 text-center space-y-3">
+        <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 text-slate-500 mb-1">
+          <AlertCircle className="w-5 h-5 text-sky-600" />
+        </div>
+        <h3 className="text-base font-semibold text-slate-900">
+          {lang === 'zh'
+            ? circleDisabled
+              ? '已识别直线方程，等待输入圆的方程'
+              : '已识别圆的方程，等待输入直线方程'
+            : circleDisabled
+            ? 'Line equation active. Awaiting circle equation.'
+            : 'Circle equation active. Awaiting line equation.'}
+        </h3>
+        <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
+          {lang === 'zh'
+            ? '在左侧输入面板或上方快速粘贴框中补全方程，系统将立即自动生成配方法拆解、点到直线距离 d 及割线弦长双法推导步骤。'
+            : 'Enter the remaining equation to generate complete step-by-step derivations.'}
+        </p>
+      </div>
+    );
+  }
 
   // Copy full solution markdown/text
   const handleCopySolution = () => {
@@ -60,7 +94,7 @@ ${analysis.relation === 'intersecting' ? `5. Chord Length:\n   L = 2 * sqrt(R^2 
           <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-md text-xs sm:text-sm overflow-x-auto">
             <button
               onClick={() => setActiveTab('all')}
-              className={`px-3 py-1 font-medium rounded transition-colors whitespace-nowrap ${
+              className={`px-3 py-1 font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
                 activeTab === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -68,7 +102,7 @@ ${analysis.relation === 'intersecting' ? `5. Chord Length:\n   L = 2 * sqrt(R^2 
             </button>
             <button
               onClick={() => setActiveTab('square')}
-              className={`px-3 py-1 font-medium rounded transition-colors whitespace-nowrap ${
+              className={`px-3 py-1 font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
                 activeTab === 'square' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -76,7 +110,7 @@ ${analysis.relation === 'intersecting' ? `5. Chord Length:\n   L = 2 * sqrt(R^2 
             </button>
             <button
               onClick={() => setActiveTab('chord')}
-              className={`px-3 py-1 font-medium rounded transition-colors whitespace-nowrap ${
+              className={`px-3 py-1 font-medium rounded transition-colors whitespace-nowrap cursor-pointer ${
                 activeTab === 'chord' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -86,7 +120,7 @@ ${analysis.relation === 'intersecting' ? `5. Chord Length:\n   L = 2 * sqrt(R^2 
 
           <button
             onClick={handleCopySolution}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap cursor-pointer"
           >
             {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
             <span>{copied ? t.btnCopied : t.btnCopySolution}</span>
@@ -106,8 +140,9 @@ ${analysis.relation === 'intersecting' ? `5. Chord Length:\n   L = 2 * sqrt(R^2 
                 </span>
                 <span>{t.tabSquareStep}</span>
               </h3>
-              <span className="text-xs text-slate-500 font-mono">
-                {circleType === 'general' ? 'General → Standard' : 'Standard Check'}
+              {/* Chinese translation for subheader: 一般式 → 标准式 */}
+              <span className="text-xs text-slate-600 font-medium px-2 py-0.5 bg-slate-100 rounded">
+                {circleType === 'general' ? (lang === 'zh' ? '一般式 → 标准式' : 'General → Standard') : (lang === 'zh' ? '标准式检验' : 'Standard Check')}
               </span>
             </div>
 
@@ -418,15 +453,23 @@ ${analysis.relation === 'intersecting' ? `5. Chord Length:\n   L = 2 * sqrt(R^2 
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
-              <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-lg space-y-1.5">
+              <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-lg space-y-2">
                 <span className="font-semibold text-slate-900">{t.extremaDistancesTitle}</span>
                 <p className="text-slate-600 leading-relaxed">
                   d_min = |d - R|, d_max = d + R:
                 </p>
-                <div className="pt-1.5 space-y-1 font-mono text-sm">
+                <div className="pt-1.5 space-y-1.5 font-mono text-sm">
                   <div>
                     {t.nearPointLabel}: <MathView math={`d_{\\min} = ${analysis.minDistLatex}`} />
                   </div>
+                  {/* Item 4 requirement: 相交时 d_min=0 加一句"直线与圆相交，圆上存在点在直线上" */}
+                  {analysis.relation === 'intersecting' && (
+                    <div className="text-xs text-emerald-700 font-sans font-medium bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-md">
+                      {lang === 'zh'
+                        ? '★ 关键解析：直线与圆相交，圆上存在点在直线上，故最近距离 d_min = 0。'
+                        : '★ Key Takeaway: The line intersects the circle, so there are points on the circle lying on the line (d_min = 0).'}
+                    </div>
+                  )}
                   <div>
                     {t.farPointLabel}: <MathView math={`d_{\\max} = ${analysis.maxDistLatex}`} />
                   </div>

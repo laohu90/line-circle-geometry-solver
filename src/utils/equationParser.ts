@@ -28,7 +28,6 @@ function cleanMathStr(str: string): string {
     .replace(/\s+/g, '')
     .replace(/（/g, '(')
     .replace(/）/g, ')')
-    .replace(/，/g, ',')
     .replace(/＋/g, '+')
     .replace(/－/g, '-')
     .replace(/＝/g, '=')
@@ -38,11 +37,10 @@ function cleanMathStr(str: string): string {
 }
 
 /**
- * Robust polynomial term parser for equations in x and y:
- * Given a string like "x^2+y^2-2x+4y-4=0", splits into terms and extracts coefficients.
+ * Robust polynomial term parser for general circle equation:
+ * E.g. "x^2+y^2-2x+4y-4=0" or "x^2+y^2-4=0"
  */
 function parseCircleGeneral(eq: string): { D: number; E: number; F: number } | null {
-  // Normalize equation into standard LHS = 0 form
   const parts = eq.split('=');
   if (parts.length > 2) return null;
 
@@ -66,12 +64,10 @@ function parseCircleGeneral(eq: string): { D: number; E: number; F: number } | n
     if (!t) continue;
 
     if (t === 'x^2' || t === '+x^2') {
-      // 1 * x^2
       continue;
     } else if (t === '-x^2') {
       return null; // unsupported negative leading coefficient
     } else if (t === 'y^2' || t === '+y^2') {
-      // 1 * y^2
       continue;
     } else if (t.endsWith('x') && !t.includes('^')) {
       // Linear x term
@@ -96,34 +92,72 @@ function parseCircleGeneral(eq: string): { D: number; E: number; F: number } | n
 }
 
 /**
- * Parse standard form circle: (x - h)^2 + (y - k)^2 = R^2
+ * Parse standard form circle: (x - x0)^2 + (y - y0)^2 = R^2
+ * Supports:
+ * - (x-1)^2+(y+2)^2=9
+ * - (x-1)^2+(y+2)^2=3^2
+ * - (x+2)^2+y^2=4
+ * - x^2+(y-3)^2=16
+ * - x^2+y^2=25
+ * - (x-1)^2+(y+2)^2-9=0
  */
 function parseCircleStandard(eq: string): { x0: number; y0: number; r: number } | null {
   const parts = eq.split('=');
-  if (parts.length !== 2) return null;
+  let lhs = parts[0];
+  let rhsVal: number | null = null;
 
-  const lhs = parts[0];
-  const rhs = parseFloat(parts[1]);
-  if (isNaN(rhs) || rhs <= 0) return null;
+  if (parts.length === 2) {
+    const rhsStr = parts[1];
+    // Check if rhs is e.g. 3^2
+    const sqMatch = rhsStr.match(/^([0-9.]+)\^2$/);
+    if (sqMatch) {
+      const base = parseFloat(sqMatch[1]);
+      if (!isNaN(base) && base > 0) {
+        rhsVal = base * base;
+      }
+    } else {
+      const parsed = parseFloat(rhsStr);
+      if (!isNaN(parsed)) {
+        rhsVal = parsed;
+      }
+    }
+  }
 
-  let rSquared = rhs;
-  let r = Math.sqrt(rSquared);
+  // If RHS is not set or equation is formatted as LHS - R^2 = 0
+  if (rhsVal === null && parts.length === 2 && parts[1] === '0') {
+    // Check trailing constant e.g. -9 or -16
+    const constMatch = lhs.match(/([+-][0-9.]+)$/);
+    if (constMatch) {
+      const c = parseFloat(constMatch[1]);
+      if (c < 0) {
+        rhsVal = -c;
+        lhs = lhs.slice(0, constMatch.index);
+      }
+    }
+  }
 
-  // Pattern for x-part: (x-1)^2 or (x+2)^2 or x^2
+  if (rhsVal === null || rhsVal <= 0) return null;
+  const r = Math.sqrt(rhsVal);
+
+  // Pattern for x-part: (x-1)^2, (x+2)^2, (x)^2, x^2
   let x0 = 0;
-  let y0 = 0;
-
   const xMatch = lhs.match(/\(x([+-][0-9.]+)\)\^2/);
   if (xMatch) {
     x0 = -parseFloat(xMatch[1]);
-  } else if (!lhs.includes('x^2') && !lhs.includes('(x')) {
+  } else if (lhs.includes('(x)^2') || lhs.includes('x^2')) {
+    x0 = 0;
+  } else {
     return null;
   }
 
+  // Pattern for y-part: (y-1)^2, (y+2)^2, (y)^2, y^2
+  let y0 = 0;
   const yMatch = lhs.match(/\(y([+-][0-9.]+)\)\^2/);
   if (yMatch) {
     y0 = -parseFloat(yMatch[1]);
-  } else if (!lhs.includes('y^2') && !lhs.includes('(y')) {
+  } else if (lhs.includes('(y)^2') || lhs.includes('y^2')) {
+    y0 = 0;
+  } else {
     return null;
   }
 
@@ -131,9 +165,17 @@ function parseCircleStandard(eq: string): { x0: number; y0: number; r: number } 
 }
 
 /**
- * Parse line equation: Ax + By + C = 0 or y = kx + b or x = c
+ * Parse line equation:
+ * 1. x = c (vertical line)
+ * 2. y = kx + b or y = kx
+ * 3. Ax + By + C = 0 or Ax + By = C
  */
 function parseLine(eq: string): { A: number; B: number; C: number; k: number; b: number; isVertical: boolean; xVal?: number } | null {
+  // Reject circle equations
+  if (eq.includes('^2') || eq.includes('x^2') || eq.includes('y^2')) {
+    return null;
+  }
+
   // 1. Vertical line: x = c
   const vertMatch = eq.match(/^x=([+-]?[0-9.]+)$/);
   if (vertMatch) {
@@ -141,14 +183,20 @@ function parseLine(eq: string): { A: number; B: number; C: number; k: number; b:
     return { A: 1, B: 0, C: -cVal, k: 0, b: 0, isVertical: true, xVal: cVal };
   }
 
-  // 2. Slope-intercept: y = kx + b or y = kx
+  // 2. Slope-intercept: y = kx + b or y = kx or y = b
   const slopeMatch = eq.match(/^y=([+-]?[0-9.]*)x(?:([+-][0-9.]+))?$/);
   if (slopeMatch) {
     const kCoeff = slopeMatch[1];
     const k = kCoeff === '' || kCoeff === '+' ? 1 : kCoeff === '-' ? -1 : parseFloat(kCoeff);
     const b = slopeMatch[2] ? parseFloat(slopeMatch[2]) : 0;
-    // kx - y + b = 0 => A=k, B=-1, C=b
     return { A: k, B: -1, C: b, k, b, isVertical: false };
+  }
+
+  // Horizontal line: y = b
+  const horizMatch = eq.match(/^y=([+-]?[0-9.]+)$/);
+  if (horizMatch) {
+    const bVal = parseFloat(horizMatch[1]);
+    return { A: 0, B: 1, C: -bVal, k: 0, b: bVal, isVertical: false };
   }
 
   // 3. General form: Ax + By + C = 0 or Ax + By = C
@@ -193,63 +241,113 @@ function parseLine(eq: string): { A: number; B: number; C: number; k: number; b:
 }
 
 /**
+ * Helper to parse a single equation string chunk for either Circle or Line
+ */
+function parseSingleEquationChunk(chunk: string) {
+  const s = cleanMathStr(chunk);
+  if (!s) return null;
+
+  // 1. Check Standard Form Circle
+  const stdCircle = parseCircleStandard(s);
+  if (stdCircle) {
+    const { x0, y0, r } = stdCircle;
+    // Expanded General Form coefficients:
+    // (x - x0)^2 + (y - y0)^2 = R^2
+    // => x^2 - 2x0*x + x0^2 + y^2 - 2y0*y + y0^2 = R^2
+    // => x^2 + y^2 + Dx + Ey + F = 0 where D = -2x0, E = -2y0, F = x0^2 + y0^2 - R^2
+    const D = -2 * x0;
+    const E = -2 * y0;
+    const F = x0 * x0 + y0 * y0 - r * r;
+
+    return {
+      type: 'circle' as const,
+      circle: {
+        mode: 'standard' as const,
+        standard: { x0, y0, r },
+        general: { D, E, F },
+        latex: formatCircleStandard(x0, y0, r),
+      },
+    };
+  }
+
+  // 2. Check General Form Circle
+  const genCircle = parseCircleGeneral(s);
+  if (genCircle) {
+    const { D, E, F } = genCircle;
+    const x0 = -D / 2;
+    const y0 = -E / 2;
+    const rSq = Math.max(0.01, (D * D + E * E - 4 * F) / 4);
+    const r = Math.sqrt(rSq);
+
+    return {
+      type: 'circle' as const,
+      circle: {
+        mode: 'general' as const,
+        general: { D, E, F },
+        standard: { x0, y0, r },
+        latex: formatCircleGeneral(D, E, F),
+      },
+    };
+  }
+
+  // 3. Check Line Equation
+  const lineRes = parseLine(s);
+  if (lineRes) {
+    const { A, B, C, k, b, isVertical, xVal } = lineRes;
+    return {
+      type: 'line' as const,
+      line: {
+        mode: isVertical ? ('slopeIntercept' as const) : ('general' as const),
+        general: { A, B, C },
+        slope: { k, b, isVertical, xVal },
+        latex: formatLineEquation(A, B, C),
+      },
+    };
+  }
+
+  return null;
+}
+
+/**
  * Master parser: Takes any user string, natural prompt, or pasted equation.
- * Returns both forms completely synchronized and calculated!
+ * Supports multiple equations separated by newline, semicolon, comma, &, 和, 与.
+ * Correctly identifies single or dual equations.
  */
 export function parseMathEquation(raw: string): ParseResult | null {
   if (!raw || !raw.trim()) return null;
-  const s = cleanMathStr(raw);
+
+  // Split by common delimiters: newline, semicolon (; ；), comma (, ，), &, or Chinese separators
+  const chunks = raw
+    .split(/[\n\r;；,，&]+|(?<=[0-9])(?=\s*(?:和|与)\s*)/)
+    .map((c) => c.trim())
+    .filter(Boolean);
 
   let parsedCircle: ParseResult['circle'] | undefined;
   let parsedLine: ParseResult['line'] | undefined;
   const matchedPhrases: string[] = [];
 
-  // Check Standard Form Circle
-  const stdCircle = parseCircleStandard(s);
-  if (stdCircle) {
-    const { x0, y0, r } = stdCircle;
-    // Calculate expanded General Form: D = -2x0, E = -2y0, F = x0^2 + y0^2 - R^2
-    const D = -2 * x0;
-    const E = -2 * y0;
-    const F = x0 * x0 + y0 * y0 - r * r;
-    parsedCircle = {
-      mode: 'standard',
-      standard: { x0, y0, r },
-      general: { D, E, F },
-      latex: formatCircleStandard(x0, y0, r),
-    };
-    matchedPhrases.push(formatCircleStandard(x0, y0, r));
-  } else {
-    // Check General Form Circle
-    const genCircle = parseCircleGeneral(s);
-    if (genCircle) {
-      const { D, E, F } = genCircle;
-      // Calculate standard form: x0 = -D/2, y0 = -E/2, r = sqrt(D^2+E^2-4F)/2
-      const x0 = -D / 2;
-      const y0 = -E / 2;
-      const rSq = Math.max(0.01, (D * D + E * E - 4 * F) / 4);
-      const r = Math.sqrt(rSq);
-      parsedCircle = {
-        mode: 'general',
-        general: { D, E, F },
-        standard: { x0, y0, r },
-        latex: formatCircleGeneral(D, E, F),
-      };
-      matchedPhrases.push(formatCircleGeneral(D, E, F));
+  // Parse each chunk
+  for (const chunk of chunks) {
+    const res = parseSingleEquationChunk(chunk);
+    if (res?.type === 'circle' && !parsedCircle) {
+      parsedCircle = res.circle;
+      matchedPhrases.push(res.circle.latex);
+    } else if (res?.type === 'line' && !parsedLine) {
+      parsedLine = res.line;
+      matchedPhrases.push(res.line.latex);
     }
   }
 
-  // Check Line
-  const lineRes = parseLine(s);
-  if (lineRes) {
-    const { A, B, C, k, b, isVertical, xVal } = lineRes;
-    parsedLine = {
-      mode: isVertical ? 'slopeIntercept' : 'general',
-      general: { A, B, C },
-      slope: { k, b, isVertical, xVal },
-      latex: formatLineEquation(A, B, C),
-    };
-    matchedPhrases.push(formatLineEquation(A, B, C));
+  // If no chunks matched via splitting, try the whole raw string directly
+  if (!parsedCircle && !parsedLine) {
+    const res = parseSingleEquationChunk(raw);
+    if (res?.type === 'circle') {
+      parsedCircle = res.circle;
+      matchedPhrases.push(res.circle.latex);
+    } else if (res?.type === 'line') {
+      parsedLine = res.line;
+      matchedPhrases.push(res.line.latex);
+    }
   }
 
   if (parsedCircle || parsedLine) {

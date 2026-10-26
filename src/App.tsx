@@ -28,11 +28,12 @@ import {
   Globe,
   Plus,
   FileText,
-  Sparkles,
+  BookmarkCheck,
+  Compass,
 } from 'lucide-react';
 
 export default function App() {
-  // Multilingual State: Default English, with URL param and localStorage detection
+  // Multilingual State: Default English or Chinese based on browser/storage
   const [lang, setLang] = useState<SupportedLanguage>(() => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -44,13 +45,16 @@ export default function App() {
       if (savedLang && ['en', 'es', 'fr', 'pt', 'zh'].includes(savedLang)) {
         return savedLang as SupportedLanguage;
       }
+      if (navigator.language && navigator.language.startsWith('zh')) {
+        return 'zh';
+      }
     } catch {
       // fallback
     }
-    return 'en';
+    return 'zh';
   });
 
-  const t = useMemo(() => TRANSLATIONS[lang] || TRANSLATIONS.en, [lang]);
+  const t = useMemo(() => TRANSLATIONS[lang] || TRANSLATIONS.zh, [lang]);
 
   // Persist language and sync with URL & DOM
   const handleLanguageChange = (newLang: SupportedLanguage) => {
@@ -96,6 +100,10 @@ export default function App() {
     isVertical: false,
   });
 
+  // Single-equation standby states (Requirement 3: when only one is provided, reset and gray out the other)
+  const [circleDisabled, setCircleDisabled] = useState(false);
+  const [lineDisabled, setLineDisabled] = useState(false);
+
   // Mistake Notebook stored in LocalStorage
   const [mistakeQuestions, setMistakeQuestions] = useState<MistakeQuestion[]>(() => {
     try {
@@ -134,6 +142,7 @@ export default function App() {
 
   // Handle Dragging in Canvas
   const handleUpdateCenterFromCanvas = (newX: number, newY: number) => {
+    setCircleDisabled(false);
     setStandardCircle((prev) => ({ ...prev, x0: newX, y0: newY }));
     setGeneralCircle((prev) => ({
       ...prev,
@@ -143,6 +152,7 @@ export default function App() {
   };
 
   const handleUpdateRadiusFromCanvas = (newR: number) => {
+    setCircleDisabled(false);
     setStandardCircle((prev) => ({ ...prev, r: newR }));
     if (circleMode === 'general') {
       const x0 = -generalCircle.D / 2;
@@ -159,6 +169,8 @@ export default function App() {
     const item = mistakeQuestions.find((q) => q.id === presetId) ||
       PRESET_EXAM_PROBLEMS.find((q) => q.id === presetId);
     if (!item) return;
+    setCircleDisabled(false);
+    setLineDisabled(false);
     setCircleMode(item.circleMode);
     setGeneralCircle(item.generalCircle);
     setStandardCircle(item.standardCircle);
@@ -170,6 +182,8 @@ export default function App() {
 
   // Reset to default sample
   const handleReset = () => {
+    setCircleDisabled(false);
+    setLineDisabled(false);
     setCircleMode('general');
     setGeneralCircle({ D: -4, E: 2, F: -4 });
     setStandardCircle({ x0: 2, y0: -1, r: 3 });
@@ -202,6 +216,14 @@ export default function App() {
     setMistakeQuestions((prev) => prev.filter((q) => q.id !== id));
   };
 
+  const handleClearAllQuestions = () => {
+    setMistakeQuestions([]);
+  };
+
+  const handleRestorePresets = () => {
+    setMistakeQuestions(PRESET_EXAM_PROBLEMS);
+  };
+
   const handleToggleMastered = (id: string) => {
     setMistakeQuestions((prev) =>
       prev.map((q) => (q.id === id ? { ...q, isMastered: !q.isMastered } : q))
@@ -218,27 +240,28 @@ export default function App() {
     <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans text-sm sm:text-base selection:bg-sky-100 selection:text-sky-900">
       {/* 
         TOP BAR CONTRACT:
-        Zone 1: Single text wordmark
-        Zone 2: 4-5 single-line clean text navigation links
-        Zone 3: 1 primary action
+        Zone 1: Wordmark
+        Zone 2: Text navigation links
+        Zone 3: Actions
       */}
-      <header className="flex items-center justify-between gap-6 px-4 sm:px-6 py-3.5 border-b border-slate-200 bg-white sticky top-0 z-40">
-        {/* Zone 1: Single text element wordmark */}
+      <header className="flex items-center justify-between gap-2 sm:gap-6 px-3 sm:px-6 py-2.5 sm:py-3.5 border-b border-slate-200 bg-white sticky top-0 z-40">
+        {/* Zone 1: Wordmark */}
         <a
           href="/"
-          className="text-base sm:text-lg font-bold tracking-tight text-slate-900 whitespace-nowrap shrink-0 flex items-center gap-2.5"
+          className="text-sm sm:text-lg font-bold tracking-tight text-slate-900 whitespace-nowrap shrink-0 flex items-center gap-2"
         >
-          <div className="w-7 h-7 rounded bg-slate-900 text-white flex items-center justify-center text-xs font-bold font-mono">
+          <div className="w-6 h-6 sm:w-7 sm:h-7 rounded bg-slate-900 text-white flex items-center justify-center text-xs font-bold font-mono">
             d
           </div>
-          <span>{t.appName}</span>
+          <span className="hidden xs:inline">{t.appName}</span>
+          <span className="xs:hidden font-bold">{t.appShortName || '几何助手'}</span>
         </a>
 
-        {/* Zone 2: 4-5 clean single-line text navigation links */}
+        {/* Zone 2: Navigation links */}
         <nav className="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-600">
           <button
             onClick={() => setActiveNav('solver')}
-            className={`hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 ${
+            className={`hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               activeNav === 'solver'
                 ? 'text-slate-900 font-semibold underline underline-offset-8 decoration-2 decoration-sky-600'
                 : ''
@@ -248,7 +271,7 @@ export default function App() {
           </button>
           <button
             onClick={() => setActiveNav('canvas')}
-            className={`hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 ${
+            className={`hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               activeNav === 'canvas'
                 ? 'text-slate-900 font-semibold underline underline-offset-8 decoration-2 decoration-sky-600'
                 : ''
@@ -258,7 +281,7 @@ export default function App() {
           </button>
           <button
             onClick={() => setActiveNav('toolbox')}
-            className={`hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 ${
+            className={`hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               activeNav === 'toolbox'
                 ? 'text-slate-900 font-semibold underline underline-offset-8 decoration-2 decoration-sky-600'
                 : ''
@@ -268,7 +291,7 @@ export default function App() {
           </button>
           <button
             onClick={() => setActiveNav('notebook')}
-            className={`hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 ${
+            className={`hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               activeNav === 'notebook'
                 ? 'text-slate-900 font-semibold underline underline-offset-8 decoration-2 decoration-sky-600'
                 : ''
@@ -278,7 +301,7 @@ export default function App() {
           </button>
           <button
             onClick={() => setActiveNav('cheatsheet')}
-            className={`hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 ${
+            className={`hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               activeNav === 'cheatsheet'
                 ? 'text-slate-900 font-semibold underline underline-offset-8 decoration-2 decoration-sky-600'
                 : ''
@@ -289,38 +312,38 @@ export default function App() {
         </nav>
 
         {/* Zone 3: Language Selector + Primary Action */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           {/* Language Switcher */}
           <div className="relative flex items-center">
-            <Globe className="w-4 h-4 text-slate-500 absolute left-2 pointer-events-none" />
+            <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 absolute left-2 pointer-events-none" />
             <select
               value={lang}
               onChange={(e) => handleLanguageChange(e.target.value as SupportedLanguage)}
-              className="pl-7 pr-2.5 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-md hover:bg-slate-100 focus:outline-none focus:border-sky-500 cursor-pointer transition-colors"
+              className="pl-6 sm:pl-7 pr-2 sm:pr-2.5 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-md hover:bg-slate-100 focus:outline-none focus:border-sky-500 cursor-pointer transition-colors"
             >
-              <option value="en">{t.langEn}</option>
-              <option value="es">{t.langEs}</option>
-              <option value="fr">{t.langFr}</option>
-              <option value="pt">{t.langPt}</option>
-              <option value="zh">{t.langZh}</option>
+              <option value="zh">中文</option>
+              <option value="en">English</option>
+              <option value="es">Español</option>
+              <option value="fr">Français</option>
+              <option value="pt">Português</option>
             </select>
           </div>
 
           <button
             onClick={() => setIsSaveModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-white bg-slate-900 rounded-md hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0 shadow-xs"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-white bg-slate-900 rounded-md hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0 shadow-xs cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            <span>{t.btnAddNotebook}</span>
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">{t.btnAddNotebook}</span>
           </button>
         </div>
       </header>
 
       {/* Mobile Nav Bar */}
-      <div className="lg:hidden flex items-center justify-around border-b border-slate-200 bg-slate-50 px-2 py-2 text-xs font-medium text-slate-600 overflow-x-auto">
+      <div className="lg:hidden flex items-center gap-1 border-b border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-medium text-slate-600 overflow-x-auto">
         <button
           onClick={() => setActiveNav('solver')}
-          className={`px-2.5 py-1 rounded whitespace-nowrap ${
+          className={`px-2.5 py-1 rounded whitespace-nowrap cursor-pointer ${
             activeNav === 'solver' ? 'bg-white text-slate-900 shadow-xs font-semibold' : ''
           }`}
         >
@@ -328,7 +351,7 @@ export default function App() {
         </button>
         <button
           onClick={() => setActiveNav('canvas')}
-          className={`px-2.5 py-1 rounded whitespace-nowrap ${
+          className={`px-2.5 py-1 rounded whitespace-nowrap cursor-pointer ${
             activeNav === 'canvas' ? 'bg-white text-slate-900 shadow-xs font-semibold' : ''
           }`}
         >
@@ -336,7 +359,7 @@ export default function App() {
         </button>
         <button
           onClick={() => setActiveNav('toolbox')}
-          className={`px-2.5 py-1 rounded whitespace-nowrap ${
+          className={`px-2.5 py-1 rounded whitespace-nowrap cursor-pointer ${
             activeNav === 'toolbox' ? 'bg-white text-slate-900 shadow-xs font-semibold' : ''
           }`}
         >
@@ -344,7 +367,7 @@ export default function App() {
         </button>
         <button
           onClick={() => setActiveNav('notebook')}
-          className={`px-2.5 py-1 rounded whitespace-nowrap ${
+          className={`px-2.5 py-1 rounded whitespace-nowrap cursor-pointer ${
             activeNav === 'notebook' ? 'bg-white text-slate-900 shadow-xs font-semibold' : ''
           }`}
         >
@@ -352,7 +375,7 @@ export default function App() {
         </button>
         <button
           onClick={() => setActiveNav('cheatsheet')}
-          className={`px-2.5 py-1 rounded whitespace-nowrap ${
+          className={`px-2.5 py-1 rounded whitespace-nowrap cursor-pointer ${
             activeNav === 'cheatsheet' ? 'bg-white text-slate-900 shadow-xs font-semibold' : ''
           }`}
         >
@@ -360,21 +383,23 @@ export default function App() {
         </button>
       </div>
 
-      {/* Main Content Container (Baseline: 1440px desktop) */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      {/* Main Content Container */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
         {/* VIEW 1: SOLVER & ANALYSIS */}
         {activeNav === 'solver' && (
-          <div className="space-y-6">
+          <div className="space-y-5 sm:space-y-6">
             {/* Top Quick Verdict Card */}
             <SummaryCard
               analysis={analysis}
+              circleDisabled={circleDisabled}
+              lineDisabled={lineDisabled}
               t={t}
               onOpenSaveModal={() => setIsSaveModalOpen(true)}
             />
 
             {/* Split 2-Column: Left Inputs, Right Canvas */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-              <div className="lg:col-span-5">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
+              <div className="lg:col-span-5 min-w-0">
                 <InputPanel
                   circleMode={circleMode}
                   setCircleMode={setCircleMode}
@@ -388,6 +413,10 @@ export default function App() {
                   setGeneralLine={setGeneralLine}
                   slopeLine={slopeLine}
                   setSlopeLine={setSlopeLine}
+                  circleDisabled={circleDisabled}
+                  setCircleDisabled={setCircleDisabled}
+                  lineDisabled={lineDisabled}
+                  setLineDisabled={setLineDisabled}
                   t={t}
                   lang={lang}
                   onSelectPreset={handleSelectPreset}
@@ -395,10 +424,12 @@ export default function App() {
                 />
               </div>
 
-              <div className="lg:col-span-7 flex flex-col">
-                <div className="flex-1 flex flex-col min-h-[480px]">
+              <div className="lg:col-span-7 flex flex-col min-w-0">
+                <div className="flex-1 flex flex-col min-h-[360px] sm:min-h-[480px]">
                   <GeometryCanvas
                     analysis={analysis}
+                    circleDisabled={circleDisabled}
+                    lineDisabled={lineDisabled}
                     t={t}
                     onUpdateCenter={handleUpdateCenterFromCanvas}
                     onUpdateRadius={handleUpdateRadiusFromCanvas}
@@ -411,6 +442,8 @@ export default function App() {
             <DetailedSteps
               analysis={analysis}
               circleType={circleMode === 'general' ? 'general' : 'standard'}
+              circleDisabled={circleDisabled}
+              lineDisabled={lineDisabled}
               t={t}
               lang={lang}
             />
@@ -432,16 +465,18 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setActiveNav('solver')}
-                  className="px-3.5 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50"
+                  className="px-3.5 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 cursor-pointer"
                 >
                   {t.navSolver}
                 </button>
               </div>
             </div>
 
-            <div className="h-[640px]">
+            <div className="h-[480px] sm:h-[620px]">
               <GeometryCanvas
                 analysis={analysis}
+                circleDisabled={circleDisabled}
+                lineDisabled={lineDisabled}
                 t={t}
                 onUpdateCenter={handleUpdateCenterFromCanvas}
                 onUpdateRadius={handleUpdateRadiusFromCanvas}
@@ -449,37 +484,39 @@ export default function App() {
             </div>
 
             {/* Readout bar */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-white border border-slate-200 rounded-lg p-4 text-xs sm:text-sm">
-              <div>
-                <span className="text-slate-500">{t.metricCenter}:</span>
-                <span className="font-mono font-semibold ml-1.5">
-                  ({analysis.x0.toFixed(2)}, {analysis.y0.toFixed(2)})
-                </span>
+            {!circleDisabled && !lineDisabled && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-white border border-slate-200 rounded-lg p-3 sm:p-4 text-xs sm:text-sm">
+                <div>
+                  <span className="text-slate-500">{t.metricCenter}:</span>
+                  <span className="font-mono font-semibold ml-1.5">
+                    ({analysis.x0.toFixed(2)}, {analysis.y0.toFixed(2)})
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500">{t.metricDistance}:</span>
+                  <span className="font-mono font-semibold ml-1.5">
+                    {analysis.distance.toFixed(3)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500">{t.metricRadius}:</span>
+                  <span className="font-mono font-semibold ml-1.5">
+                    {analysis.r.toFixed(3)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500">{t.verdictLabel}:</span>
+                  <span className="font-semibold text-sky-700 ml-1.5">
+                    {analysis.relation === 'intersecting'
+                      ? t.verdictSecant
+                      : analysis.relation === 'tangent'
+                      ? t.verdictTangent
+                      : t.verdictDisjoint}
+                    {analysis.relation === 'intersecting' && ` (L=${analysis.chordLength?.toFixed(2)})`}
+                  </span>
+                </div>
               </div>
-              <div>
-                <span className="text-slate-500">{t.metricDistance}:</span>
-                <span className="font-mono font-semibold ml-1.5">
-                  {analysis.distance.toFixed(3)}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-500">{t.metricRadius}:</span>
-                <span className="font-mono font-semibold ml-1.5">
-                  {analysis.r.toFixed(3)}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-500">{t.verdictLabel}:</span>
-                <span className="font-semibold text-sky-700 ml-1.5">
-                  {analysis.relation === 'intersecting'
-                    ? t.verdictSecant
-                    : analysis.relation === 'tangent'
-                    ? t.verdictTangent
-                    : t.verdictDisjoint}
-                  {analysis.relation === 'intersecting' && ` (L=${analysis.chordLength?.toFixed(2)})`}
-                </span>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -502,6 +539,8 @@ export default function App() {
             lang={lang}
             onLoadQuestion={(q) => handleSelectPreset(q.id)}
             onDeleteQuestion={handleDeleteQuestion}
+            onClearAll={handleClearAllQuestions}
+            onRestorePresets={handleRestorePresets}
             onToggleMastered={handleToggleMastered}
             onUpdateNote={handleUpdateNote}
             onImportQuestions={(imported) => setMistakeQuestions(imported)}
@@ -509,9 +548,9 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 4: EXAM FORMULAS & CHEAT SHEET */}
+        {/* VIEW 4: EXAM FORMULAS & CHEAT SHEET WITH MINIMAL NUMERICAL EXAMPLES (Requirement 5) */}
         {activeNav === 'cheatsheet' && (
-          <div className="bg-white border border-slate-200 rounded-lg p-6 sm:p-8 space-y-6">
+          <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-8 space-y-6">
             <div>
               <div className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-sky-600 shrink-0" />
@@ -525,85 +564,162 @@ export default function App() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs sm:text-sm">
-              {/* Model 1 */}
-              <div className="border border-slate-200 rounded-lg p-5 bg-slate-50/50 space-y-3">
+              {/* Model 1: 垂径定理与弦长勾股模型 */}
+              <div className="border border-slate-200 rounded-lg p-4 sm:p-5 bg-slate-50/50 space-y-3.5">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-slate-900 text-sm sm:text-base">
                     {t.model1Title}
                   </h3>
                   <span className="text-xs font-mono text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded font-medium">
-                    Core
+                    核心模型
                   </span>
                 </div>
                 <p className="text-slate-600 leading-relaxed">
                   {t.model1Desc}
                 </p>
-                <div className="bg-white border border-slate-200 rounded-md p-3.5 text-center">
+                <div className="bg-white border border-slate-200 rounded-md p-3 text-center">
                   <MathView math={`R^2 = d^2 + \\left(\\frac{L}{2}\\right)^2 \\iff L = 2\\sqrt{R^2 - d^2}`} block />
                 </div>
+
+                {/* Minimal Numerical Example for Model 1 */}
+                <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-md p-3 space-y-1.5 text-xs">
+                  <div className="font-bold text-emerald-900 flex items-center gap-1.5">
+                    <BookmarkCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>【最小带数字例题】</span>
+                  </div>
+                  <div className="text-slate-700 leading-relaxed">
+                    <strong>题设：</strong>圆半径 <MathView math="R = 5" />，圆心到直线的距离 <MathView math="d = 3" />。求直线被圆截得的弦长 <MathView math="L" />。
+                  </div>
+                  <div className="text-slate-700 leading-relaxed bg-white/80 p-2 rounded border border-emerald-100 font-mono space-y-1">
+                    <div>半弦长 <MathView math="\frac{L}{2} = \sqrt{R^2 - d^2} = \sqrt{5^2 - 3^2} = 4" /></div>
+                    <div>全弦长 <MathView math="L = 2 \times 4 = 8" /></div>
+                  </div>
+                  <div className="text-emerald-800 text-[11px] font-medium">
+                    ⚡ 考场秒记：勾股数 3-4-5，半弦为 4，切记全弦乘以 2 得到 8！
+                  </div>
+                </div>
+
                 <div className="text-slate-500 leading-relaxed text-xs">
                   {t.model1Tip}
                 </div>
               </div>
 
-              {/* Model 2 */}
-              <div className="border border-slate-200 rounded-lg p-5 bg-slate-50/50 space-y-3">
+              {/* Model 2: 圆的一般方程配方法标准转化 */}
+              <div className="border border-slate-200 rounded-lg p-4 sm:p-5 bg-slate-50/50 space-y-3.5">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-slate-900 text-sm sm:text-base">
                     {t.model2Title}
                   </h3>
                   <span className="text-xs font-mono text-sky-700 bg-sky-100 px-2 py-0.5 rounded font-medium">
-                    Identity
+                    恒等转化
                   </span>
                 </div>
                 <p className="text-slate-600 leading-relaxed">
                   {t.model2Desc}
                 </p>
-                <div className="bg-white border border-slate-200 rounded-md p-3.5 text-center">
+                <div className="bg-white border border-slate-200 rounded-md p-3 text-center">
                   <MathView math={`\\left(x + \\frac{D}{2}\\right)^2 + \\left(y + \\frac{E}{2}\\right)^2 = \\frac{D^2 + E^2 - 4F}{4}`} block />
                 </div>
+
+                {/* Minimal Numerical Example for Model 2 */}
+                <div className="bg-sky-50/70 border border-sky-200/80 rounded-md p-3 space-y-1.5 text-xs">
+                  <div className="font-bold text-sky-900 flex items-center gap-1.5">
+                    <BookmarkCheck className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                    <span>【最小带数字例题】</span>
+                  </div>
+                  <div className="text-slate-700 leading-relaxed">
+                    <strong>题设：</strong>求圆方程 <MathView math="x^2 + y^2 - 4x + 2y - 4 = 0" /> 的圆心坐标与半径 <MathView math="R" />。
+                  </div>
+                  <div className="text-slate-700 leading-relaxed bg-white/80 p-2 rounded border border-sky-100 font-mono space-y-1">
+                    <div>配方：<MathView math="(x - 2)^2 + (y + 1)^2 = 4 + 4 + 1 = 9 = 3^2" /></div>
+                    <div>充要检验：<MathView math="D^2 + E^2 - 4F = (-4)^2 + 2^2 - 4(-4) = 36 > 0" /></div>
+                  </div>
+                  <div className="text-sky-800 text-[11px] font-medium">
+                    ⚡ 考场秒记：圆心 <MathView math="O(2, -1)" />，半径 <MathView math="R = \sqrt{9} = 3" />。（若判别式等于0则退化为点圆）。
+                  </div>
+                </div>
+
                 <div className="text-slate-500 leading-relaxed text-xs">
                   {t.model2Tip}
                 </div>
               </div>
 
-              {/* Model 3 */}
-              <div className="border border-slate-200 rounded-lg p-5 bg-slate-50/50 space-y-3">
+              {/* Model 3: 圆上任意一点到直线距离的最值 */}
+              <div className="border border-slate-200 rounded-lg p-4 sm:p-5 bg-slate-50/50 space-y-3.5">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-slate-900 text-sm sm:text-base">
                     {t.model3Title}
                   </h3>
                   <span className="text-xs font-mono text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded font-medium">
-                    Extrema
+                    极值定理
                   </span>
                 </div>
                 <p className="text-slate-600 leading-relaxed">
                   {t.model3Desc}
                 </p>
-                <div className="bg-white border border-slate-200 rounded-md p-3.5 text-center space-y-1">
+                <div className="bg-white border border-slate-200 rounded-md p-3 text-center">
                   <MathView math={`d_{\\min} = |d - R|, \\quad d_{\\max} = d + R`} block />
                 </div>
+
+                {/* Minimal Numerical Example for Model 3 */}
+                <div className="bg-indigo-50/70 border border-indigo-200/80 rounded-md p-3 space-y-1.5 text-xs">
+                  <div className="font-bold text-indigo-900 flex items-center gap-1.5">
+                    <BookmarkCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                    <span>【最小带数字例题】</span>
+                  </div>
+                  <div className="text-slate-700 leading-relaxed">
+                    <strong>题设：</strong>圆 <MathView math="x^2 + y^2 = 4" />（圆心 <MathView math="(0,0)" />，半径 <MathView math="R = 2" />）与直线 <MathView math="3x + 4y - 20 = 0" />。求圆上的点到直线的最大与最小距离。
+                  </div>
+                  <div className="text-slate-700 leading-relaxed bg-white/80 p-2 rounded border border-indigo-100 font-mono space-y-1">
+                    <div>圆心距 <MathView math="d = \frac{|3(0) + 4(0) - 20|}{\sqrt{3^2 + 4^2}} = \frac{20}{5} = 4 > R" />（相离）</div>
+                    <div>最近距离 <MathView math="d_{\min} = d - R = 4 - 2 = 2" /></div>
+                    <div>最远距离 <MathView math="d_{\max} = d + R = 4 + 2 = 6" /></div>
+                  </div>
+                  <div className="text-indigo-800 text-[11px] font-medium">
+                    ⚡ 考场秒记：相离时 <MathView math="d_{\min} = d - R" />；若直线与圆相交，则圆上有点在直线上，<MathView math="d_{\min} = 0" />！
+                  </div>
+                </div>
+
                 <div className="text-slate-500 leading-relaxed text-xs">
                   {t.model3Tip}
                 </div>
               </div>
 
-              {/* Model 4 */}
-              <div className="border border-slate-200 rounded-lg p-5 bg-slate-50/50 space-y-3">
+              {/* Model 4: 斜率不存在特殊直线的严谨分类 */}
+              <div className="border border-slate-200 rounded-lg p-4 sm:p-5 bg-slate-50/50 space-y-3.5">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-slate-900 text-sm sm:text-base">
                     {t.model4Title}
                   </h3>
                   <span className="text-xs font-mono text-rose-700 bg-rose-100 px-2 py-0.5 rounded font-medium">
-                    Trap
+                    高频陷阱
                   </span>
                 </div>
                 <p className="text-slate-600 leading-relaxed">
                   {t.model4Desc}
                 </p>
-                <div className="bg-white border border-slate-200 rounded-md p-3.5 text-center">
+                <div className="bg-white border border-slate-200 rounded-md p-3 text-center">
                   <MathView math={`Ax + By + C = 0 \\iff B \\neq 0 \\lor (B = 0 \\implies x = -C/A)`} block />
                 </div>
+
+                {/* Minimal Numerical Example for Model 4 */}
+                <div className="bg-rose-50/70 border border-rose-200/80 rounded-md p-3 space-y-1.5 text-xs">
+                  <div className="font-bold text-rose-900 flex items-center gap-1.5">
+                    <BookmarkCheck className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                    <span>【最小带数字例题】</span>
+                  </div>
+                  <div className="text-slate-700 leading-relaxed">
+                    <strong>题设：</strong>过点 <MathView math="P(2, 3)" /> 作圆 <MathView math="x^2 + y^2 = 4" /> 的切线，求直线方程。
+                  </div>
+                  <div className="text-slate-700 leading-relaxed bg-white/80 p-2 rounded border border-rose-100 font-mono space-y-1">
+                    <div>① 设斜截式 <MathView math="y - 3 = k(x - 2)" />，由 <MathView math="d = 2" /> 解得 <MathView math="k = \frac{5}{12}" />，得 <MathView math="5x - 12y + 26 = 0" /></div>
+                    <div>② 必检特殊线：斜率不存在的竖直线 <MathView math="x = 2" />，圆心到其距离 <MathView math="d = 2 = R" />，恰好也切于点 <MathView math="(2, 0)" />！</div>
+                  </div>
+                  <div className="text-rose-800 text-[11px] font-medium">
+                    ⚡ 考场秒记：切线共有 2 条：<MathView math="x = 2" /> 和 <MathView math="5x - 12y + 26 = 0" />。漏掉竖直线扣一半分数！
+                  </div>
+                </div>
+
                 <div className="text-slate-500 leading-relaxed text-xs">
                   {t.model4Tip}
                 </div>
@@ -623,7 +739,7 @@ export default function App() {
       />
 
       {/* Subtle Footer */}
-      <footer className="border-t border-slate-200 py-6 px-6 mt-12 bg-white text-xs text-slate-500">
+      <footer className="border-t border-slate-200 py-6 px-4 sm:px-6 mt-12 bg-white text-xs text-slate-500">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-slate-800">{t.appName}</span>

@@ -10,6 +10,8 @@ import { ZoomIn, ZoomOut, RotateCcw, Eye, Layers, Download } from 'lucide-react'
 
 interface GeometryCanvasProps {
   analysis: PositionalAnalysis;
+  circleDisabled?: boolean;
+  lineDisabled?: boolean;
   t?: TranslationSchema;
   onUpdateCenter?: (x: number, y: number) => void;
   onUpdateRadius?: (r: number) => void;
@@ -17,22 +19,39 @@ interface GeometryCanvasProps {
 
 export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
   analysis,
+  circleDisabled = false,
+  lineDisabled = false,
   t,
   onUpdateCenter,
   onUpdateRadius,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 700, height: 500 });
+  const [dimensions, setDimensions] = useState({ width: 700, height: 480 });
 
   // Viewport transformation: scale (pixels per math unit), origin (in canvas pixel space)
   const [scale, setScale] = useState<number>(36);
-  const [pan, setPan] = useState<Point2D>({ x: 0, y: 0 });
+  const [pan, setPan] = useState<Point2D>({ x: 350, y: 240 });
 
-  // Dragging states
+  // Dragging / Touch states
   const [isPanning, setIsPanning] = useState(false);
   const [dragStart, setDragStart] = useState<Point2D>({ x: 0, y: 0 });
   const [activeDragTarget, setActiveDragTarget] = useState<'center' | 'radius' | null>(null);
+
+  // Multi-touch tracking for pinch-to-zoom on mobile
+  const touchStateRef = useRef<{
+    initialPinchDistance: number | null;
+    initialScale: number;
+    initialPan: Point2D;
+    initialMidpoint: Point2D;
+    touchStartTime: number;
+  }>({
+    initialPinchDistance: null,
+    initialScale: 36,
+    initialPan: { x: 0, y: 0 },
+    initialMidpoint: { x: 0, y: 0 },
+    touchStartTime: 0,
+  });
 
   // Toggles
   const [showAuxLines, setShowAuxLines] = useState(true);
@@ -40,30 +59,31 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
 
   // Auto-center on initial load or reset
   const resetView = useCallback(() => {
-    if (analysis.isValidCircle) {
+    if (analysis.isValidCircle && !circleDisabled) {
       const targetScale = Math.min(
         dimensions.width / (analysis.r * 6 + 10),
         dimensions.height / (analysis.r * 6 + 10),
         45
       );
-      setScale(Math.max(20, Math.min(targetScale, 60)));
+      const newScale = Math.max(20, Math.min(targetScale, 60));
+      setScale(newScale);
       setPan({
-        x: dimensions.width / 2 - analysis.x0 * scale,
-        y: dimensions.height / 2 + analysis.y0 * scale,
+        x: dimensions.width / 2 - analysis.x0 * newScale,
+        y: dimensions.height / 2 + analysis.y0 * newScale,
       });
     } else {
       setScale(36);
       setPan({ x: dimensions.width / 2, y: dimensions.height / 2 });
     }
-  }, [analysis.isValidCircle, analysis.x0, analysis.y0, analysis.r, dimensions, scale]);
+  }, [analysis.isValidCircle, circleDisabled, analysis.x0, analysis.y0, analysis.r, dimensions]);
 
   useEffect(() => {
     const handleResize = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
         setDimensions({
-          width: Math.max(300, rect.width),
-          height: Math.max(380, rect.height || 520),
+          width: Math.max(280, rect.width),
+          height: Math.max(340, rect.height || 480),
         });
       }
     };
@@ -74,8 +94,8 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
 
   useEffect(() => {
     setPan({
-      x: dimensions.width / 2 - analysis.x0 * scale,
-      y: dimensions.height / 2 + analysis.y0 * scale,
+      x: dimensions.width / 2 - (circleDisabled ? 0 : analysis.x0) * scale,
+      y: dimensions.height / 2 + (circleDisabled ? 0 : analysis.y0) * scale,
     });
   }, [dimensions.width, dimensions.height]);
 
@@ -108,18 +128,20 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
 
-    const centerScreen = mathToScreen(analysis.x0, analysis.y0);
-    const distToCenter = Math.hypot(sx - centerScreen.x, sy - centerScreen.y);
+    if (!circleDisabled) {
+      const centerScreen = mathToScreen(analysis.x0, analysis.y0);
+      const distToCenter = Math.hypot(sx - centerScreen.x, sy - centerScreen.y);
 
-    if (distToCenter < 16 && onUpdateCenter) {
-      setActiveDragTarget('center');
-      return;
-    }
+      if (distToCenter < 16 && onUpdateCenter) {
+        setActiveDragTarget('center');
+        return;
+      }
 
-    const circleScreenRadius = analysis.r * scale;
-    if (Math.abs(distToCenter - circleScreenRadius) < 12 && onUpdateRadius) {
-      setActiveDragTarget('radius');
-      return;
+      const circleScreenRadius = analysis.r * scale;
+      if (Math.abs(distToCenter - circleScreenRadius) < 12 && onUpdateRadius) {
+        setActiveDragTarget('radius');
+        return;
+      }
     }
 
     setIsPanning(true);
@@ -140,13 +162,13 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
       return;
     }
 
-    if (activeDragTarget === 'center' && onUpdateCenter) {
+    if (activeDragTarget === 'center' && onUpdateCenter && !circleDisabled) {
       const mPos = screenToMath(sx, sy);
       onUpdateCenter(Math.round(mPos.x * 2) / 2, Math.round(mPos.y * 2) / 2);
       return;
     }
 
-    if (activeDragTarget === 'radius' && onUpdateRadius) {
+    if (activeDragTarget === 'radius' && onUpdateRadius && !circleDisabled) {
       const centerScreen = mathToScreen(analysis.x0, analysis.y0);
       const newScreenR = Math.hypot(sx - centerScreen.x, sy - centerScreen.y);
       const newMathR = Math.max(0.5, Math.round((newScreenR / scale) * 2) / 2);
@@ -178,6 +200,112 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
       x: mouseX - mathX * newScale,
       y: mouseY + mathY * newScale,
     });
+  };
+
+  // Touch Handlers for Mobile 375~420px (Single finger pan, two-finger pinch-to-zoom)
+  const handleTouchStart = (e: React.TouchEvent<SVGSVGElement>) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      const sx = touch.clientX - rect.left;
+      const sy = touch.clientY - rect.top;
+
+      if (!circleDisabled) {
+        const centerScreen = mathToScreen(analysis.x0, analysis.y0);
+        const distToCenter = Math.hypot(sx - centerScreen.x, sy - centerScreen.y);
+
+        if (distToCenter < 24 && onUpdateCenter) {
+          setActiveDragTarget('center');
+          return;
+        }
+
+        const circleScreenRadius = analysis.r * scale;
+        if (Math.abs(distToCenter - circleScreenRadius) < 18 && onUpdateRadius) {
+          setActiveDragTarget('radius');
+          return;
+        }
+      }
+
+      setIsPanning(true);
+      setDragStart({ x: sx - pan.x, y: sy - pan.y });
+    } else if (e.touches.length === 2) {
+      // Two finger pinch start
+      setIsPanning(false);
+      setActiveDragTarget(null);
+
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const midX = (t1.clientX + t2.clientX) / 2 - rect.left;
+      const midY = (t1.clientY + t2.clientY) / 2 - rect.top;
+
+      touchStateRef.current = {
+        initialPinchDistance: dist,
+        initialScale: scale,
+        initialPan: { ...pan },
+        initialMidpoint: { x: midX, y: midY },
+        touchStartTime: Date.now(),
+      };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<SVGSVGElement>) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      const sx = touch.clientX - rect.left;
+      const sy = touch.clientY - rect.top;
+
+      if (isPanning) {
+        setPan({
+          x: sx - dragStart.x,
+          y: sy - dragStart.y,
+        });
+        return;
+      }
+
+      if (activeDragTarget === 'center' && onUpdateCenter && !circleDisabled) {
+        const mPos = screenToMath(sx, sy);
+        onUpdateCenter(Math.round(mPos.x * 2) / 2, Math.round(mPos.y * 2) / 2);
+        return;
+      }
+
+      if (activeDragTarget === 'radius' && onUpdateRadius && !circleDisabled) {
+        const centerScreen = mathToScreen(analysis.x0, analysis.y0);
+        const newScreenR = Math.hypot(sx - centerScreen.x, sy - centerScreen.y);
+        const newMathR = Math.max(0.5, Math.round((newScreenR / scale) * 2) / 2);
+        onUpdateRadius(newMathR);
+        return;
+      }
+    } else if (e.touches.length === 2 && touchStateRef.current.initialPinchDistance) {
+      // Pinch to zoom
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const ratio = currentDist / touchStateRef.current.initialPinchDistance;
+
+      const newScale = Math.max(10, Math.min(130, touchStateRef.current.initialScale * ratio));
+      const mid = touchStateRef.current.initialMidpoint;
+
+      const mathX = (mid.x - touchStateRef.current.initialPan.x) / touchStateRef.current.initialScale;
+      const mathY = (touchStateRef.current.initialPan.y - mid.y) / touchStateRef.current.initialScale;
+
+      setScale(newScale);
+      setPan({
+        x: mid.x - mathX * newScale,
+        y: mid.y + mathY * newScale,
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsPanning(false);
+    setActiveDragTarget(null);
+    touchStateRef.current.initialPinchDistance = null;
   };
 
   // Export SVG file
@@ -280,7 +408,10 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
 
   // Line
   const renderLine = () => {
+    if (lineDisabled) return null;
     const { A, B, C } = analysis;
+    if (Math.abs(A) < 1e-9 && Math.abs(B) < 1e-9) return null;
+
     const minM = screenToMath(0, dimensions.height);
     const maxM = screenToMath(dimensions.width, 0);
 
@@ -318,7 +449,7 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
   const radiusScr = analysis.r * scale;
 
   const renderRightAngle = () => {
-    if (!analysis.isValidCircle || analysis.distance < 0.05) return null;
+    if (!analysis.isValidCircle || circleDisabled || lineDisabled || analysis.distance < 0.05) return null;
     const size = 10;
     const dx = centerScr.x - footScr.x;
     const dy = centerScr.y - footScr.y;
@@ -347,91 +478,95 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
     );
   };
 
+  const hasBoth = !circleDisabled && !lineDisabled;
+
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full min-h-[480px] bg-white border border-slate-200 rounded-lg overflow-hidden select-none"
+      className="relative w-full h-full min-h-[360px] sm:min-h-[480px] bg-white border border-slate-200 rounded-lg overflow-hidden select-none touch-none"
     >
-      {/* Floating Toolbar */}
-      <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 p-1 bg-white/95 backdrop-blur-sm border border-slate-200 rounded-md shadow-xs">
+      {/* Floating Toolbar (responsive on 375~420px mobile screens) */}
+      <div className="absolute top-2.5 left-2.5 z-10 flex flex-wrap items-center gap-1 p-1 bg-white/95 backdrop-blur-sm border border-slate-200 rounded-md shadow-xs max-w-[calc(100%-20px)] sm:max-w-none">
         <button
           onClick={() => setScale((s) => Math.min(130, s * 1.2))}
           title={t?.canvasZoomIn || 'Zoom In'}
-          className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors"
+          className="p-1 sm:p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer"
         >
-          <ZoomIn className="w-4 h-4" />
+          <ZoomIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </button>
         <button
           onClick={() => setScale((s) => Math.max(10, s / 1.2))}
           title={t?.canvasZoomOut || 'Zoom Out'}
-          className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors"
+          className="p-1 sm:p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer"
         >
-          <ZoomOut className="w-4 h-4" />
+          <ZoomOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </button>
         <button
           onClick={resetView}
           title={t?.canvasResetView || 'Reset View'}
-          className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors"
+          className="p-1 sm:p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer"
         >
-          <RotateCcw className="w-4 h-4" />
+          <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </button>
         <button
           onClick={handleExportSvg}
           title={t?.btnExportSvg || 'Export Diagram'}
-          className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors"
+          className="p-1 sm:p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer"
         >
-          <Download className="w-4 h-4" />
+          <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </button>
-        <div className="w-[1px] h-4 bg-slate-200 mx-0.5" />
+        <div className="w-[1px] h-3.5 bg-slate-200 mx-0.5" />
         <button
           onClick={() => setShowAuxLines(!showAuxLines)}
-          className={`px-2.5 py-1 text-xs sm:text-sm font-medium flex items-center gap-1 rounded transition-colors ${
+          className={`px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-medium flex items-center gap-1 rounded transition-colors cursor-pointer ${
             showAuxLines ? 'bg-sky-50 text-sky-700' : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          <Layers className="w-3.5 h-3.5" />
-          <span>{t?.canvasAuxToggle || 'Aux Lines'}</span>
+          <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+          <span className="hidden xs:inline">{t?.canvasAuxToggle || 'Aux'}</span>
         </button>
         <button
           onClick={() => setShowExtrema(!showExtrema)}
-          className={`px-2.5 py-1 text-xs sm:text-sm font-medium flex items-center gap-1 rounded transition-colors ${
+          className={`px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-medium flex items-center gap-1 rounded transition-colors cursor-pointer ${
             showExtrema ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          <Eye className="w-3.5 h-3.5" />
-          <span>{t?.canvasExtremaToggle || 'Extrema'}</span>
+          <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+          <span className="hidden xs:inline">{t?.canvasExtremaToggle || 'Extrema'}</span>
         </button>
       </div>
 
-      {/* Floating Legend */}
-      <div className="absolute top-3 right-3 z-10 flex flex-col gap-1 p-3 bg-white/95 backdrop-blur-sm border border-slate-200 rounded-md shadow-xs text-xs sm:text-sm">
-        <div className="flex items-center gap-2">
-          <span
-            className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-              analysis.relation === 'intersecting'
-                ? 'bg-emerald-500'
+      {/* Floating Status / Legend */}
+      {hasBoth && (
+        <div className="absolute top-12 sm:top-2.5 right-2.5 z-10 flex flex-col gap-0.5 sm:gap-1 p-2 sm:p-2.5 bg-white/95 backdrop-blur-sm border border-slate-200 rounded-md shadow-xs text-xs">
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${
+                analysis.relation === 'intersecting'
+                  ? 'bg-emerald-500'
+                  : analysis.relation === 'tangent'
+                  ? 'bg-amber-500'
+                  : 'bg-indigo-500'
+              }`}
+            />
+            <span className="font-semibold text-slate-800">
+              {analysis.relation === 'intersecting'
+                ? t?.verdictSecant || 'Secant'
                 : analysis.relation === 'tangent'
-                ? 'bg-amber-500'
-                : 'bg-indigo-500'
-            }`}
-          />
-          <span className="font-semibold text-slate-800">
-            {analysis.relation === 'intersecting'
-              ? t?.verdictSecant || 'Secant'
-              : analysis.relation === 'tangent'
-              ? t?.verdictTangent || 'Tangent'
-              : t?.verdictDisjoint || 'Disjoint'}
-          </span>
-          <span className="text-slate-500 font-mono text-xs">
-            d={analysis.distance.toFixed(2)} vs R={analysis.r.toFixed(2)}
-          </span>
-        </div>
-        {analysis.relation === 'intersecting' && (
-          <div className="text-slate-600 font-mono text-xs pt-1 border-t border-slate-100 font-medium">
-            {t?.chordLabel || 'Chord'} L = {analysis.chordLength?.toFixed(3)}
+                ? t?.verdictTangent || 'Tangent'
+                : t?.verdictDisjoint || 'Disjoint'}
+            </span>
+            <span className="text-slate-500 font-mono text-[11px]">
+              d={analysis.distance.toFixed(1)} vs R={analysis.r.toFixed(1)}
+            </span>
           </div>
-        )}
-      </div>
+          {analysis.relation === 'intersecting' && (
+            <div className="text-slate-600 font-mono text-[11px] pt-0.5 border-t border-slate-100 font-medium">
+              {t?.chordLabel || 'Chord'} L = {analysis.chordLength?.toFixed(2)}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* SVG Canvas */}
       <svg
@@ -442,11 +577,15 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
       >
         {renderGrid()}
         {renderLine()}
 
-        {analysis.isValidCircle && (
+        {!circleDisabled && analysis.isValidCircle && (
           <g>
             <circle
               cx={centerScr.x}
@@ -457,7 +596,7 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
               strokeWidth={2.5}
             />
 
-            {showAuxLines && (
+            {hasBoth && showAuxLines && (
               <g>
                 <line
                   x1={centerScr.x}
@@ -473,7 +612,7 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
                   x={(centerScr.x + footScr.x) / 2 + 6}
                   y={(centerScr.y + footScr.y) / 2 - 6}
                   fill="#B45309"
-                  fontSize={12}
+                  fontSize={11}
                   fontWeight="bold"
                   className="font-mono select-none"
                 >
@@ -482,7 +621,7 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
               </g>
             )}
 
-            {showAuxLines && analysis.relation === 'intersecting' && analysis.intersectionPoints.length === 2 && (
+            {hasBoth && showAuxLines && analysis.relation === 'intersecting' && analysis.intersectionPoints.length === 2 && (
               <g>
                 {analysis.intersectionPoints.map((pt, idx) => {
                   const pScr = mathToScreen(pt.x, pt.y);
@@ -511,14 +650,14 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
                         x2={pB.x}
                         y2={pB.y}
                         stroke="#059669"
-                        strokeWidth={4.5}
+                        strokeWidth={4}
                         strokeLinecap="round"
                       />
                       <text
                         x={(pA.x + pB.x) / 2}
-                        y={(pA.y + pB.y) / 2 + 18}
+                        y={(pA.y + pB.y) / 2 + 16}
                         fill="#047857"
-                        fontSize={12}
+                        fontSize={11}
                         fontWeight="bold"
                         textAnchor="middle"
                         className="font-mono select-none bg-white"
@@ -531,7 +670,7 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
               </g>
             )}
 
-            {showExtrema && (
+            {hasBoth && showExtrema && (
               <g>
                 {(() => {
                   const den = Math.hypot(analysis.A, analysis.B);
@@ -544,23 +683,23 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
 
                   return (
                     <g>
-                      <circle cx={nearP.x} cy={nearP.y} r={4} fill="#6366F1" />
+                      <circle cx={nearP.x} cy={nearP.y} r={3.5} fill="#6366F1" />
                       <text
-                        x={nearP.x + 6}
-                        y={nearP.y - 5}
+                        x={nearP.x + 5}
+                        y={nearP.y - 4}
                         fill="#4F46E5"
-                        fontSize={11}
+                        fontSize={10}
                         fontWeight="bold"
                         className="font-mono select-none"
                       >
                         {t?.nearPointLabel || 'd_min'}
                       </text>
-                      <circle cx={farP.x} cy={farP.y} r={4} fill="#818CF8" />
+                      <circle cx={farP.x} cy={farP.y} r={3.5} fill="#818CF8" />
                       <text
-                        x={farP.x + 6}
-                        y={farP.y + 14}
+                        x={farP.x + 5}
+                        y={farP.y + 12}
                         fill="#4F46E5"
-                        fontSize={11}
+                        fontSize={10}
                         fontWeight="bold"
                         className="font-mono select-none"
                       >
@@ -572,59 +711,63 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
               </g>
             )}
 
-            <circle cx={footScr.x} cy={footScr.y} r={4.5} fill="#F59E0B" stroke="#FFFFFF" strokeWidth={1.5} />
-            <text
-              x={footScr.x - 16}
-              y={footScr.y - 8}
-              fill="#B45309"
-              fontSize={12}
-              fontWeight="bold"
-              className="font-mono select-none"
-            >
-              H
-            </text>
+            {hasBoth && (
+              <>
+                <circle cx={footScr.x} cy={footScr.y} r={4} fill="#F59E0B" stroke="#FFFFFF" strokeWidth={1.5} />
+                <text
+                  x={footScr.x - 14}
+                  y={footScr.y - 7}
+                  fill="#B45309"
+                  fontSize={11}
+                  fontWeight="bold"
+                  className="font-mono select-none"
+                >
+                  H
+                </text>
 
-            {analysis.intersectionPoints.map((pt, idx) => {
-              const pScr = mathToScreen(pt.x, pt.y);
-              const name = analysis.relation === 'tangent' ? (t?.pointTangentLabel || 'T') : idx === 0 ? 'A' : 'B';
-              return (
-                <g key={`pt-${idx}`}>
-                  <circle
-                    cx={pScr.x}
-                    cy={pScr.y}
-                    r={5.5}
-                    fill={analysis.relation === 'tangent' ? '#F59E0B' : '#059669'}
-                    stroke="#FFFFFF"
-                    strokeWidth={2}
-                  />
-                  <text
-                    x={pScr.x + 9}
-                    y={pScr.y - 7}
-                    fill={analysis.relation === 'tangent' ? '#B45309' : '#065F46'}
-                    fontSize={12}
-                    fontWeight="bold"
-                    className="font-mono select-none"
-                  >
-                    {name}({pt.x.toFixed(1)}, {pt.y.toFixed(1)})
-                  </text>
-                </g>
-              );
-            })}
+                {analysis.intersectionPoints.map((pt, idx) => {
+                  const pScr = mathToScreen(pt.x, pt.y);
+                  const name = analysis.relation === 'tangent' ? (t?.pointTangentLabel || 'T') : idx === 0 ? 'A' : 'B';
+                  return (
+                    <g key={`pt-${idx}`}>
+                      <circle
+                        cx={pScr.x}
+                        cy={pScr.y}
+                        r={5}
+                        fill={analysis.relation === 'tangent' ? '#F59E0B' : '#059669'}
+                        stroke="#FFFFFF"
+                        strokeWidth={2}
+                      />
+                      <text
+                        x={pScr.x + 8}
+                        y={pScr.y - 6}
+                        fill={analysis.relation === 'tangent' ? '#B45309' : '#065F46'}
+                        fontSize={11}
+                        fontWeight="bold"
+                        className="font-mono select-none"
+                      >
+                        {name}({pt.x.toFixed(1)}, {pt.y.toFixed(1)})
+                      </text>
+                    </g>
+                  );
+                })}
+              </>
+            )}
 
             <circle
               cx={centerScr.x}
               cy={centerScr.y}
-              r={7}
+              r={6.5}
               fill="#2563EB"
               stroke="#FFFFFF"
-              strokeWidth={2.5}
+              strokeWidth={2}
               className="cursor-move hover:scale-125 transition-transform"
             />
             <text
-              x={centerScr.x + 10}
-              y={centerScr.y - 8}
+              x={centerScr.x + 8}
+              y={centerScr.y - 6}
               fill="#1D4ED8"
-              fontSize={13}
+              fontSize={12}
               fontWeight="bold"
               className="font-mono select-none"
             >
@@ -634,9 +777,9 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
         )}
       </svg>
 
-      <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-xs text-slate-500 pointer-events-none">
-        <span>{t?.canvasHint || 'Mouse wheel to zoom · Drag canvas to pan · Drag circle center'}</span>
-        <span className="font-mono">{t?.canvasScale || 'Scale:'} {scale < 25 ? '5' : scale < 50 ? '2' : '1'} units</span>
+      <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-[11px] text-slate-500 pointer-events-none">
+        <span className="truncate">{t?.canvasHint || 'Touch/Wheel to zoom · Drag to pan'}</span>
+        <span className="font-mono shrink-0 ml-1">{t?.canvasScale || 'Scale:'} {scale < 25 ? '5' : scale < 50 ? '2' : '1'}u</span>
       </div>
     </div>
   );
