@@ -40,20 +40,89 @@ interface MistakeNotebookProps {
   onOpenSaveModal: () => void;
 }
 
+// Tag translation map
+export function formatTagText(tag: string): string {
+  if (!tag) return '';
+  const trimmed = tag.trim();
+  if (
+    trimmed === 'Secant & Chord' ||
+    trimmed === 'Secante y Cuerda' ||
+    trimmed === 'Sécante et Corde' ||
+    trimmed === 'Secante e Corda' ||
+    trimmed === '相交弦长'
+  ) {
+    return '相交与弦长';
+  }
+  if (
+    trimmed === 'Tangent & Contact' ||
+    trimmed === 'Tangente y Contacto' ||
+    trimmed === 'Tangente et Contact' ||
+    trimmed === 'Tangente e Contato' ||
+    trimmed === '切线验证'
+  ) {
+    return '相切与切线';
+  }
+  if (
+    trimmed === 'Distance Extrema' ||
+    trimmed === 'Distancias Extremas' ||
+    trimmed === 'Distances Extrêmes' ||
+    trimmed === 'Distâncias Extremas' ||
+    trimmed === '最值问题' ||
+    trimmed === '距离极值'
+  ) {
+    return '最值距离';
+  }
+  if (
+    trimmed === 'Vertical Line x=c' ||
+    trimmed === 'Recta Vertical x=c' ||
+    trimmed === 'Droite Verticale x=c' ||
+    trimmed === 'Reta Vertical x=c' ||
+    trimmed === '垂直特殊线' ||
+    trimmed === '垂直特殊线 x=c'
+  ) {
+    return '竖直线防坑';
+  }
+  if (
+    trimmed === 'Perpendicular Chord' ||
+    trimmed === 'Cuerda Perpendicular' ||
+    trimmed === 'Corde Perpendiculaire' ||
+    trimmed === 'Corda Perpendicular' ||
+    trimmed === '参数逆推'
+  ) {
+    return '垂径定理';
+  }
+  return trimmed;
+}
+
 // Format note with fully translated Chinese prefixes
-function formatNoteText(text: string): string {
+export function formatNoteText(text: string): string {
   if (!text) return '';
   return text
-    .replace(/^Pitfall:\s*/i, '易错坑点：')
-    .replace(/^Core Principle:\s*/i, '核心原理：')
-    .replace(/^Exam Strategy:\s*/i, '考场策略：')
-    .replace(/^High Frequency Mistake:\s*/i, '高频陷阱：')
-    .replace(/^Geometric Insight:\s*/i, '几何洞察：')
-    .replace(/^易错警示：/g, '易错坑点：')
-    .replace(/^考点精髓：/g, '核心原理：')
-    .replace(/^复习备忘：/g, '考场策略：')
-    .replace(/^致命陷阱：/g, '高频陷阱：')
-    .replace(/^特殊几何直观：/g, '几何洞察：');
+    .replace(/^Pitfall[:：]?\s*/i, '易错坑点：')
+    .replace(/^Core Principle[:：]?\s*/i, '核心原理：')
+    .replace(/^Exam Strategy[:：]?\s*/i, '考场策略：')
+    .replace(/^High Frequency Mistake[:：]?\s*/i, '高频陷阱：')
+    .replace(/^Geometric Insight[:：]?\s*/i, '几何洞察：')
+    .replace(/^易错警示[:：]?\s*/g, '易错坑点：')
+    .replace(/^考点精髓[:：]?\s*/g, '核心原理：')
+    .replace(/^复习备忘[:：]?\s*/g, '考场策略：')
+    .replace(/^致命陷阱[:：]?\s*/g, '高频陷阱：')
+    .replace(/^特殊几何直观[:：]?\s*/g, '几何洞察：')
+    .replace(/^Trampa[:：]?\s*/i, '易错坑点：')
+    .replace(/^Piège[:：]?\s*/i, '易错坑点：')
+    .replace(/^Pegadinha[:：]?\s*/i, '易错坑点：')
+    .replace(/^Principio Clave[:：]?\s*/i, '核心原理：')
+    .replace(/^Principe Clé[:：]?\s*/i, '核心原理：')
+    .replace(/^Princípio Chave[:：]?\s*/i, '核心原理：')
+    .replace(/^Estrategia de Examen[:：]?\s*/i, '考场策略：')
+    .replace(/^Stratégie d'Examen[:：]?\s*/i, '考场策略：')
+    .replace(/^Estratégia de Prova[:：]?\s*/i, '考场策略：')
+    .replace(/^Error Frecuente[:：]?\s*/i, '高频陷阱：')
+    .replace(/^Erreur Fréquente[:：]?\s*/i, '高频陷阱：')
+    .replace(/^Erro Frequente[:：]?\s*/i, '高频陷阱：')
+    .replace(/^Visión Geométrica[:：]?\s*/i, '几何洞察：')
+    .replace(/^Intuition Géométrique[:：]?\s*/i, '几何洞察：')
+    .replace(/^Intuição Geométrica[:：]?\s*/i, '几何洞察：');
 }
 
 export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
@@ -83,8 +152,9 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
   const tagCounts = useMemo(() => {
     const map = new Map<string, number>();
     for (const q of questions) {
-      if (q.tag) {
-        map.set(q.tag, (map.get(q.tag) || 0) + 1);
+      const formatted = formatTagText(q.tag);
+      if (formatted) {
+        map.set(formatted, (map.get(formatted) || 0) + 1);
       }
     }
     return map;
@@ -119,14 +189,15 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
   // Filtered questions
   const filtered = useMemo(() => {
     return questions.filter((q) => {
-      if (selectedTag !== 'all' && q.tag !== selectedTag) return false;
+      const formattedTag = formatTagText(q.tag);
+      if (selectedTag !== 'all' && formattedTag !== selectedTag) return false;
       if (masteredFilter === 'unmastered' && q.isMastered) return false;
       if (masteredFilter === 'mastered' && !q.isMastered) return false;
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
         const matchTitle = q.title.toLowerCase().includes(query);
-        const matchNote = q.userNote.toLowerCase().includes(query);
-        const matchTag = q.tag.toLowerCase().includes(query);
+        const matchNote = formatNoteText(q.userNote).toLowerCase().includes(query);
+        const matchTag = formattedTag.toLowerCase().includes(query);
         const matchKeywords = q.keywords?.some((k) => k.toLowerCase().includes(query));
         if (!matchTitle && !matchNote && !matchTag && !matchKeywords) return false;
       }
@@ -453,11 +524,11 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
 
                 <div className="flex items-center gap-2 text-xs text-slate-500 shrink-0 ml-7 sm:ml-0">
                   <button
-                    onClick={() => setSelectedTag(item.tag)}
+                    onClick={() => setSelectedTag(formatTagText(item.tag))}
                     className="font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded transition-colors cursor-pointer"
-                    title={lang === 'zh' ? `按此标签筛选: ${item.tag}` : `Filter by tag: ${item.tag}`}
+                    title={lang === 'zh' ? `按此标签筛选: ${formatTagText(item.tag)}` : `Filter by tag: ${formatTagText(item.tag)}`}
                   >
-                    {highlightMatch(item.tag, searchQuery)}
+                    {highlightMatch(formatTagText(item.tag), searchQuery)}
                   </button>
                   <span aria-hidden="true">·</span>
                   <span className="font-mono text-xs">{item.date}</span>

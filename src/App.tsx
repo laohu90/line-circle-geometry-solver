@@ -33,25 +33,78 @@ import {
 
 // Normalizer to ensure tag & note prefixes are fully translated in Chinese
 function normalizeMistakeQuestion(q: MistakeQuestion): MistakeQuestion {
-  let tag = q.tag;
-  if (tag === 'Secant & Chord' || tag === '相交弦长') tag = '相交与弦长';
-  else if (tag === 'Distance Extrema' || tag === '最值问题' || tag === '距离极值') tag = '最值距离';
-  else if (tag === 'Tangent & Contact' || tag === '切线验证') tag = '相切与切线';
-  else if (tag === 'Vertical Line x=c' || tag === '垂直特殊线' || tag === '垂直特殊线 x=c') tag = '竖直线防坑';
-  else if (tag === 'Perpendicular Chord' || tag === '参数逆推') tag = '垂径定理';
+  let tag = (q.tag || '').trim();
+  if (
+    tag === 'Secant & Chord' ||
+    tag === 'Secante y Cuerda' ||
+    tag === 'Sécante et Corde' ||
+    tag === 'Secante e Corda' ||
+    tag === '相交弦长'
+  ) {
+    tag = '相交与弦长';
+  } else if (
+    tag === 'Distance Extrema' ||
+    tag === 'Distancias Extremas' ||
+    tag === 'Distances Extrêmes' ||
+    tag === 'Distâncias Extremas' ||
+    tag === '最值问题' ||
+    tag === '距离极值'
+  ) {
+    tag = '最值距离';
+  } else if (
+    tag === 'Tangent & Contact' ||
+    tag === 'Tangente y Contacto' ||
+    tag === 'Tangente et Contact' ||
+    tag === 'Tangente e Contato' ||
+    tag === '切线验证'
+  ) {
+    tag = '相切与切线';
+  } else if (
+    tag === 'Vertical Line x=c' ||
+    tag === 'Recta Vertical x=c' ||
+    tag === 'Droite Verticale x=c' ||
+    tag === 'Reta Vertical x=c' ||
+    tag === '垂直特殊线' ||
+    tag === '垂直特殊线 x=c'
+  ) {
+    tag = '竖直线防坑';
+  } else if (
+    tag === 'Perpendicular Chord' ||
+    tag === 'Cuerda Perpendicular' ||
+    tag === 'Corde Perpendiculaire' ||
+    tag === 'Corda Perpendicular' ||
+    tag === '参数逆推'
+  ) {
+    tag = '垂径定理';
+  }
 
   let userNote = q.userNote || '';
   userNote = userNote
-    .replace(/^Pitfall:\s*/i, '易错坑点：')
-    .replace(/^Core Principle:\s*/i, '核心原理：')
-    .replace(/^Exam Strategy:\s*/i, '考场策略：')
-    .replace(/^High Frequency Mistake:\s*/i, '高频陷阱：')
-    .replace(/^Geometric Insight:\s*/i, '几何洞察：')
-    .replace(/^易错警示：/g, '易错坑点：')
-    .replace(/^考点精髓：/g, '核心原理：')
-    .replace(/^复习备忘：/g, '考场策略：')
-    .replace(/^致命陷阱：/g, '高频陷阱：')
-    .replace(/^特殊几何直观：/g, '几何洞察：');
+    .replace(/^Pitfall[:：]?\s*/i, '易错坑点：')
+    .replace(/^Core Principle[:：]?\s*/i, '核心原理：')
+    .replace(/^Exam Strategy[:：]?\s*/i, '考场策略：')
+    .replace(/^High Frequency Mistake[:：]?\s*/i, '高频陷阱：')
+    .replace(/^Geometric Insight[:：]?\s*/i, '几何洞察：')
+    .replace(/^易错警示[:：]?\s*/g, '易错坑点：')
+    .replace(/^考点精髓[:：]?\s*/g, '核心原理：')
+    .replace(/^复习备忘[:：]?\s*/g, '考场策略：')
+    .replace(/^致命陷阱[:：]?\s*/g, '高频陷阱：')
+    .replace(/^特殊几何直观[:：]?\s*/g, '几何洞察：')
+    .replace(/^Trampa[:：]?\s*/i, '易错坑点：')
+    .replace(/^Piège[:：]?\s*/i, '易错坑点：')
+    .replace(/^Pegadinha[:：]?\s*/i, '易错坑点：')
+    .replace(/^Principio Clave[:：]?\s*/i, '核心原理：')
+    .replace(/^Principe Clé[:：]?\s*/i, '核心原理：')
+    .replace(/^Princípio Chave[:：]?\s*/i, '核心原理：')
+    .replace(/^Estrategia de Examen[:：]?\s*/i, '考场策略：')
+    .replace(/^Stratégie d'Examen[:：]?\s*/i, '考场策略：')
+    .replace(/^Estratégia de Prova[:：]?\s*/i, '考场策略：')
+    .replace(/^Error Frecuente[:：]?\s*/i, '高频陷阱：')
+    .replace(/^Erreur Fréquente[:：]?\s*/i, '高频陷阱：')
+    .replace(/^Erro Frequente[:：]?\s*/i, '高频陷阱：')
+    .replace(/^Visión Geométrica[:：]?\s*/i, '几何洞察：')
+    .replace(/^Intuition Géométrique[:：]?\s*/i, '几何洞察：')
+    .replace(/^Intuição Geométrica[:：]?\s*/i, '几何洞察：');
 
   return { ...q, tag, userNote };
 }
@@ -256,7 +309,7 @@ export default function App() {
 
   const handleUpdateNote = (id: string, note: string) => {
     setMistakeQuestions((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, userNote: note } : q))
+      prev.map((q) => (q.id === id ? normalizeMistakeQuestion({ ...q, userNote: note }) : q))
     );
   };
 
