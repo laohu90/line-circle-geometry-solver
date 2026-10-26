@@ -31,9 +31,14 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  // Multilingual State: Default English as requested by user ("默认英语")
+  // Multilingual State: Default English, with URL param and localStorage detection
   const [lang, setLang] = useState<SupportedLanguage>(() => {
     try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramLang = urlParams.get('lang');
+      if (paramLang && ['en', 'es', 'fr', 'pt', 'zh'].includes(paramLang)) {
+        return paramLang as SupportedLanguage;
+      }
       const savedLang = localStorage.getItem('geometry_app_lang');
       if (savedLang && ['en', 'es', 'fr', 'pt', 'zh'].includes(savedLang)) {
         return savedLang as SupportedLanguage;
@@ -46,12 +51,16 @@ export default function App() {
 
   const t = useMemo(() => TRANSLATIONS[lang] || TRANSLATIONS.en, [lang]);
 
-  // Persist language
+  // Persist language and sync with URL & DOM
   const handleLanguageChange = (newLang: SupportedLanguage) => {
     setLang(newLang);
     try {
       localStorage.setItem('geometry_app_lang', newLang);
       document.documentElement.lang = newLang;
+      document.title = `${TRANSLATIONS[newLang]?.appName || 'Line & Circle Solver'} – ${TRANSLATIONS[newLang]?.tagline || 'Geometry Assistant'}`;
+      const url = new URL(window.location.href);
+      url.searchParams.set('lang', newLang);
+      window.history.replaceState({}, '', url.toString());
     } catch {
       // ignore
     }

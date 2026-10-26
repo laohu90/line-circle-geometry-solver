@@ -2,14 +2,15 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://github.com/laohu90/line-circle-geometry-solver</loc>
+    <loc>https://line-circle-geometry-solver.formulacalckit.com/</loc>
     <lastmod>2026-10-25</lastmod>
-    <changefreq>weekly</changefreq>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://github.com/laohu90/line-circle-geometry-solver?lang=en" />
-    <xhtml:link rel="alternate" hreflang="es" href="https://github.com/laohu90/line-circle-geometry-solver?lang=es" />
-    <xhtml:link rel="alternate" hreflang="fr" href="https://github.com/laohu90/line-circle-geometry-solver?lang=fr" />
-    <xhtml:link rel="alternate" hreflang="pt" href="https://github.com/laohu90/line-circle-geometry-solver?lang=pt" />
-    <xhtml:link rel="alternate" hreflang="zh" href="https://github.com/laohu90/line-circle-geometry-solver?lang=zh" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://line-circle-geometry-solver.formulacalckit.com/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://line-circle-geometry-solver.formulacalckit.com/?lang=en" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://line-circle-geometry-solver.formulacalckit.com/?lang=es" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://line-circle-geometry-solver.formulacalckit.com/?lang=fr" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://line-circle-geometry-solver.formulacalckit.com/?lang=pt" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://line-circle-geometry-solver.formulacalckit.com/?lang=zh" />
   </url>
 </urlset>

@@ -3,7 +3,8 @@
 > **High-School & College Analytical Geometry Assistant & SEO-Optimized Web App**  
 > *Determine Secant, Tangent, and Disjoint Relations, Complete the Square Step-by-Step, Calculate Intercepted Chord Lengths, and Manage Exam Mistake Notebooks.*
 
-[![Live Demo](https://img.shields.io/badge/Demo-Live_App-blue.svg)](https://github.com/laohu90/line-circle-geometry-solver)
+[![Live Demo](https://img.shields.io/badge/Demo-line--circle--geometry--solver.formulacalckit.com-emerald.svg)](https://line-circle-geometry-solver.formulacalckit.com)
+[![GitHub](https://img.shields.io/badge/GitHub-laohu90%2Fline--circle--geometry--solver-blue.svg)](https://github.com/laohu90/line-circle-geometry-solver)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0-blue)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19.0-61dafb)](https://react.dev/)
