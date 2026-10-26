@@ -120,6 +120,90 @@ export function formatTagText(tag: string): string {
   return trimmed;
 }
 
+// Batch ③: Format problem main title into canonical Chinese specified by user
+export function formatTitleText(title: string): string {
+  if (!title) return '';
+  const trimmed = title.trim();
+  const lower = trimmed.toLowerCase();
+
+  // 1: General Form Completing Square & Secant Chord Length -> 一般式配方与割线截得弦长
+  if (
+    lower.includes('general form completing square & secant chord length') ||
+    lower.includes('general form completing square') ||
+    lower.includes('completing the square & secant chord') ||
+    lower.includes('completing square') ||
+    lower.includes('secant chord length') ||
+    trimmed.includes('经典压轴：一般式配方与割线截得弦长') ||
+    trimmed.includes('一般式配方与割线截得弦长')
+  ) {
+    return '一般式配方与割线截得弦长';
+  }
+
+  // 2: Extrema Distance: Maximum & Minimum from Circle to Line -> 圆上点到直线最大最小距离
+  if (
+    lower.includes('extrema distance: maximum & minimum from circle to line') ||
+    lower.includes('extrema distance') ||
+    lower.includes('maximum & minimum from circle to line') ||
+    lower.includes('maximum and minimum') ||
+    lower.includes('distancias extremas') ||
+    lower.includes('distances extrêmes') ||
+    lower.includes('distâncias extremas') ||
+    trimmed.includes('高考真题选填：圆上点到直线的最大/最小距离') ||
+    trimmed.includes('圆上点到直线的最大/最小距离') ||
+    trimmed.includes('圆上点到直线最大最小距离')
+  ) {
+    return '圆上点到直线最大最小距离';
+  }
+
+  // 3: Critical Tangent Verification (d=R & Δ=0) -> 相切临界值判定（d=R 且 Δ=0）
+  if (
+    lower.includes('critical tangent verification') ||
+    lower.includes('critical tangent') ||
+    lower.includes('verificación de tangencia') ||
+    lower.includes('vérification de la tangente') ||
+    lower.includes('verificação da tangência') ||
+    trimmed.includes('模拟题压轴：含参相切临界值判定') ||
+    trimmed.includes('含参相切临界值判定') ||
+    trimmed.includes('相切临界值判定') ||
+    (lower.includes('tangent') && lower.includes('d=r'))
+  ) {
+    return '相切临界值判定（d=R 且 Δ=0）';
+  }
+
+  // 4: Undefined Slope Case Trap: Vertical Line x=c -> 斜率不存在陷阱：竖直线 x=c
+  if (
+    lower.includes('undefined slope case trap') ||
+    lower.includes('undefined slope') ||
+    lower.includes('vertical line x=c') ||
+    lower.includes('trampa de la pendiente indefinida') ||
+    lower.includes('piège de la pente non définie') ||
+    lower.includes('armadilha do coeficiente angular') ||
+    trimmed.includes('易错防坑：斜率不存在的特殊直线') ||
+    trimmed.includes('斜率不存在的特殊直线') ||
+    trimmed.includes('斜率不存在陷阱')
+  ) {
+    return '斜率不存在陷阱：竖直线 x=c';
+  }
+
+  // 5: Diameter Secant: Line Passing Through Circle Center (d=0) -> 直径割线：直线过圆心（d=0）
+  if (
+    lower.includes('diameter secant: line passing through circle center') ||
+    lower.includes('diameter secant') ||
+    lower.includes('passing through circle center') ||
+    lower.includes('line passing through circle center') ||
+    lower.includes('cuerda diametral') ||
+    lower.includes('corde diamétrale') ||
+    lower.includes('corda diametral') ||
+    trimmed.includes('2024八省联考模拟：弦长为直径') ||
+    trimmed.includes('弦长为直径 2R 逆推参数') ||
+    trimmed.includes('直径割线')
+  ) {
+    return '直径割线：直线过圆心（d=0）';
+  }
+
+  return trimmed;
+}
+
 // Format note with fully translated Chinese prefixes & complete canonical presets
 export function formatNoteText(text: string): string {
   if (!text) return '';
@@ -292,7 +376,8 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
       if (masteredFilter === 'mastered' && !q.isMastered) return false;
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
-        const matchTitle = q.title.toLowerCase().includes(query);
+        const formattedTitle = formatTitleText(q.title);
+        const matchTitle = formattedTitle.toLowerCase().includes(query) || q.title.toLowerCase().includes(query);
         const matchNote = formatNoteText(q.userNote).toLowerCase().includes(query);
         const matchTag = formattedTag.toLowerCase().includes(query);
         const matchKeywords = q.keywords?.some((k) => k.toLowerCase().includes(query));
@@ -615,7 +700,7 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
                     )}
                   </button>
                   <h3 className="text-sm sm:text-base font-semibold text-slate-900 truncate">
-                    {highlightMatch(item.title, searchQuery)}
+                    {highlightMatch(formatTitleText(item.title), searchQuery)}
                   </h3>
                 </div>
 

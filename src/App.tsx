@@ -17,7 +17,7 @@ import { SupportedLanguage, TRANSLATIONS } from './i18n/translations';
 import { analyzeLineAndCircle } from './utils/mathUtils';
 import { GeometryCanvas } from './components/GeometryCanvas';
 import { DetailedSteps } from './components/DetailedSteps';
-import { MistakeNotebook, formatTagText, formatNoteText } from './components/MistakeNotebook';
+import { MistakeNotebook, formatTagText, formatNoteText, formatTitleText } from './components/MistakeNotebook';
 import { SummaryCard } from './components/SummaryCard';
 import { InputPanel } from './components/InputPanel';
 import { SaveQuestionModal } from './components/SaveQuestionModal';
@@ -31,7 +31,7 @@ import {
   BookmarkCheck,
 } from 'lucide-react';
 
-// Normalizer to ensure tag & note prefixes are fully translated in Chinese
+// Normalizer to ensure titles, tags & note prefixes are fully translated in Chinese
 function normalizeMistakeQuestion(q: MistakeQuestion): MistakeQuestion {
   // If this is an exam preset problem, directly synchronize its title, tag, and note with the Chinese canonical preset
   if (q.id && q.id.startsWith('preset-')) {
@@ -44,10 +44,11 @@ function normalizeMistakeQuestion(q: MistakeQuestion): MistakeQuestion {
     }
   }
 
+  const title = formatTitleText(q.title || '');
   const tag = formatTagText(q.tag || '') || '相交与弦长';
   const userNote = formatNoteText(q.userNote || '');
 
-  return { ...q, tag, userNote };
+  return { ...q, title, tag, userNote };
 }
 
 export default function App() {
@@ -119,18 +120,21 @@ export default function App() {
   const [circleDisabled, setCircleDisabled] = useState(false);
   const [lineDisabled, setLineDisabled] = useState(false);
 
-  // Mistake Notebook stored in LocalStorage (v3 enforces 100% translated tags & notes)
+  // Mistake Notebook stored in LocalStorage (v4 enforces 100% translated titles, tags & notes)
   const [mistakeQuestions, setMistakeQuestions] = useState<MistakeQuestion[]>(() => {
     try {
-      const savedV3 = localStorage.getItem('geometry_mistake_notebook_v3');
-      if (savedV3) {
-        const parsed = JSON.parse(savedV3);
+      const savedV4 = localStorage.getItem('geometry_mistake_notebook_v4');
+      if (savedV4) {
+        const parsed = JSON.parse(savedV4);
         if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed.map(normalizeMistakeQuestion);
         }
       }
       // Migrate from older versions if present
-      const savedLegacy = localStorage.getItem('geometry_mistake_notebook_v2') || localStorage.getItem('geometry_mistake_notebook');
+      const savedLegacy =
+        localStorage.getItem('geometry_mistake_notebook_v3') ||
+        localStorage.getItem('geometry_mistake_notebook_v2') ||
+        localStorage.getItem('geometry_mistake_notebook');
       if (savedLegacy) {
         const parsed = JSON.parse(savedLegacy);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -146,10 +150,11 @@ export default function App() {
   // Save Modal open state
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
 
-  // Sync to LocalStorage v3 and cleanup legacy caches
+  // Sync to LocalStorage v4 and cleanup legacy caches
   useEffect(() => {
     try {
-      localStorage.setItem('geometry_mistake_notebook_v3', JSON.stringify(mistakeQuestions));
+      localStorage.setItem('geometry_mistake_notebook_v4', JSON.stringify(mistakeQuestions));
+      localStorage.removeItem('geometry_mistake_notebook_v3');
       localStorage.removeItem('geometry_mistake_notebook_v2');
       localStorage.removeItem('geometry_mistake_notebook');
     } catch {
