@@ -29,6 +29,7 @@ import {
   Plus,
   FileText,
   BookmarkCheck,
+  AlertCircle,
 } from 'lucide-react';
 
 // Normalizer to ensure titles, tags & note prefixes are fully translated in Chinese
@@ -491,14 +492,31 @@ export default function App() {
 
               <div className="lg:col-span-7 flex flex-col min-w-0">
                 <div className="flex-1 flex flex-col min-h-[360px] sm:min-h-[480px]">
-                  <GeometryCanvas
-                    analysis={analysis}
-                    circleDisabled={circleDisabled || !!parseError}
-                    lineDisabled={lineDisabled || !!parseError}
-                    t={t}
-                    onUpdateCenter={handleUpdateCenterFromCanvas}
-                    onUpdateRadius={handleUpdateRadiusFromCanvas}
-                  />
+                  {parseError ? (
+                    <div className="w-full h-full min-h-[360px] sm:min-h-[480px] bg-slate-50 border border-slate-200 rounded-lg flex flex-col items-center justify-center p-6 text-center space-y-3">
+                      <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-500 border border-rose-200 flex items-center justify-center">
+                        <AlertCircle className="w-6 h-6" />
+                      </div>
+                      <h3 className="text-sm sm:text-base font-bold text-slate-800">
+                        几何图形已置空 · 等待有效双方程
+                      </h3>
+                      <p className="text-xs text-rose-600 max-w-sm font-medium">
+                        {parseError}
+                      </p>
+                      <div className="text-[11px] text-slate-400">
+                        （解析未通过时绝不展示默认参数图形，请根据提示修正输入）
+                      </div>
+                    </div>
+                  ) : (
+                    <GeometryCanvas
+                      analysis={analysis}
+                      circleDisabled={circleDisabled}
+                      lineDisabled={lineDisabled}
+                      t={t}
+                      onUpdateCenter={handleUpdateCenterFromCanvas}
+                      onUpdateRadius={handleUpdateRadiusFromCanvas}
+                    />
+                  )}
                 </div>
               </div>
             </div>

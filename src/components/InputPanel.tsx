@@ -146,6 +146,16 @@ export const InputPanel: React.FC<InputPanelProps> = ({
       return;
     }
 
+    // Explicit error from equation validation (e.g. radius <= 0 or invalid coefficients)
+    if (res?.error) {
+      setParseFeedback({
+        type: 'error',
+        msg: res.error,
+      });
+      onParseError?.(res.error);
+      return;
+    }
+
     // 2. Both failed
     if (!res || (!res.circle && !res.line)) {
       const err = lang === 'zh'
