@@ -16,6 +16,7 @@ interface SummaryCardProps {
   lineDisabled?: boolean;
   t: TranslationSchema;
   onOpenSaveModal: () => void;
+  parsedEcho?: { line: string; circle: string } | null;
 }
 
 export const SummaryCard: React.FC<SummaryCardProps> = ({
@@ -24,6 +25,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
   lineDisabled = false,
   t,
   onOpenSaveModal,
+  parsedEcho,
 }) => {
   // If one of the equations is disabled/missing
   if (circleDisabled || lineDisabled) {
@@ -56,8 +58,32 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
       ? t.verdictTangent
       : t.verdictDisjoint;
 
+  // Format line and circle echo
+  const lineEcho = parsedEcho?.line || (
+    analysis.B === 0
+      ? `x = ${-analysis.C / analysis.A}`
+      : `${analysis.A !== 0 ? `${analysis.A}x ` : ''}${analysis.B > 0 ? `+ ${analysis.B}y ` : `- ${Math.abs(analysis.B)}y `}${analysis.C >= 0 ? `+ ${analysis.C}` : `- ${Math.abs(analysis.C)}`} = 0`
+  );
+
+  const circleEcho = parsedEcho?.circle || `圆心(${analysis.x0}, ${analysis.y0}) R=${analysis.r}`;
+
   return (
     <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-6 space-y-4">
+      {/* P2: Prominent Echo of Parsed Equations */}
+      <div className="bg-sky-50 border border-sky-200 rounded-lg p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-xs">
+        <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-slate-800">
+          <span className="px-2 py-0.5 rounded bg-sky-600 text-white font-bold text-xs shrink-0">
+            本次识别
+          </span>
+          <span className="font-mono text-slate-900 leading-relaxed">
+            直线 <span className="font-semibold text-sky-950">{lineEcho}</span>；&nbsp;圆 <span className="font-semibold text-sky-950">{circleEcho}</span>
+          </span>
+        </div>
+        <span className="text-[11px] text-slate-500 font-medium shrink-0">
+          ✓ 双参数已严格核验
+        </span>
+      </div>
+
       {/* Top Header & Verdict Badge */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div>

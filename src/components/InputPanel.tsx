@@ -47,6 +47,8 @@ interface InputPanelProps {
   lang: SupportedLanguage;
   onSelectPreset: (presetId: string) => void;
   onReset: () => void;
+  onParseSuccess?: (info: { line: string; circle: string }) => void;
+  onParseError?: (err: string | null) => void;
 }
 
 export const InputPanel: React.FC<InputPanelProps> = ({
@@ -70,6 +72,8 @@ export const InputPanel: React.FC<InputPanelProps> = ({
   lang,
   onSelectPreset,
   onReset,
+  onParseSuccess,
+  onParseError,
 }) => {
   // Quick equation text parser state
   const [rawEquation, setRawEquation] = useState('');
@@ -118,23 +122,70 @@ export const InputPanel: React.FC<InputPanelProps> = ({
     e.preventDefault();
     const trimmed = rawEquation.trim();
     if (!trimmed) {
+      const err = lang === 'zh' ? '请输入方程内容后再进行识别' : t.quickParseEmptyError;
       setParseFeedback({
         type: 'error',
-        msg: lang === 'zh' ? '无法识别此方程，请检查格式' : t.quickParseEmptyError,
+        msg: err,
       });
+      onParseError?.(err);
       return;
     }
 
     const res = parseMathEquation(trimmed);
-    if (!res || (!res.circle && !res.line)) {
+
+    // 1. Natural language conjunction error detected (和, 与, 及)
+    if (res?.hasConjunctionError) {
+      const err = lang === 'zh'
+        ? '检测到自然语言连词（和/与/及），请改用分号分隔直线与圆方程，如：x=2; (x)^2+(y)^2=9'
+        : 'Natural language conjunction detected. Please separate equations with a semicolon, e.g. x=2; (x)^2+(y)^2=9';
       setParseFeedback({
         type: 'error',
-        msg: lang === 'zh' ? '无法识别此方程，请检查格式（支持一般式、标准式、直线方程，分号隔开可同时解析两个）' : t.quickParseError,
+        msg: err,
       });
+      onParseError?.(err);
       return;
     }
 
-    // Both circle and line are recognized
+    // 2. Both failed
+    if (!res || (!res.circle && !res.line)) {
+      const err = lang === 'zh'
+        ? '直线与圆方程均未能识别，请检查格式（例如：3x+4y-12=0; x^2+y^2=9）'
+        : t.quickParseError;
+      setParseFeedback({
+        type: 'error',
+        msg: err,
+      });
+      onParseError?.(err);
+      return;
+    }
+
+    // 3. ONLY circle recognized (line failed)
+    if (res.circle && !res.line) {
+      const err = lang === 'zh'
+        ? '直线部分未识别，请写成如 x=2 或 3x+4y-12=0 的形式（双方程均需识别成功才可计算）'
+        : 'Line part not recognized. Please format as x=2 or Ax+By+C=0.';
+      setParseFeedback({
+        type: 'error',
+        msg: err,
+      });
+      onParseError?.(err);
+      return; // Do NOT update parameters! Do NOT fill with default values!
+    }
+
+    // 4. ONLY line recognized (circle failed)
+    if (!res.circle && res.line) {
+      const err = lang === 'zh'
+        ? '圆部分未识别，请写成如 (x-1)^2+(y+2)^2=25 或 x^2+y^2=9 的形式（双方程均需识别成功才可计算）'
+        : 'Circle part not recognized. Please format as (x-x0)^2+(y-y0)^2=r^2 or x^2+y^2=r^2.';
+      setParseFeedback({
+        type: 'error',
+        msg: err,
+      });
+      onParseError?.(err);
+      return; // Do NOT update parameters! Do NOT fill with default values!
+    }
+
+    // 5. BOTH circle and line are recognized successfully!
     if (res.circle && res.line) {
       setCircleDisabled(false);
       setLineDisabled(false);
@@ -153,55 +204,37 @@ export const InputPanel: React.FC<InputPanelProps> = ({
         if (res.line.slope) setSlopeLine(res.line.slope);
       }
 
-      setParseFeedback({
-        type: 'success',
-        msg: lang === 'zh'
-          ? `已成功识别圆与直线方程并同步参数！`
-          : `${t.quickParseSuccess} (${res.matched})`,
-      });
-    } else if (res.circle && !res.line) {
-      // ONLY circle recognized: update circle, reset and gray out line
-      setCircleDisabled(false);
-      setLineDisabled(true);
-
-      if (res.circle.general) setGeneralCircle(res.circle.general);
-      if (res.circle.standard) setStandardCircle(res.circle.standard);
-      setCircleMode(res.circle.mode);
-
-      // Reset line parameters to 0
-      setGeneralLine({ A: 0, B: 0, C: 0 });
-      setSlopeLine({ k: 0, b: 0, isVertical: false });
-
-      setParseFeedback({
-        type: 'success',
-        msg: lang === 'zh'
-          ? `已成功识别圆方程（已自动切换并更新参数）。直线参数已重置置灰，等待输入直线方程。`
-          : `Circle equation recognized. Line parameters have been reset.`,
-      });
-    } else if (!res.circle && res.line) {
-      // ONLY line recognized: update line, reset and gray out circle
-      setLineDisabled(false);
-      setCircleDisabled(true);
-
-      if (res.line.mode === 'slopeIntercept' && res.line.slope) {
-        setLineMode('slopeIntercept');
-        setSlopeLine(res.line.slope);
-        if (res.line.general) setGeneralLine(res.line.general);
+      // Format clean echo descriptions
+      let lineText = '';
+      if (res.line.slope?.isVertical) {
+        lineText = `x = ${res.line.slope.xVal}`;
       } else if (res.line.general) {
-        setLineMode('general');
-        setGeneralLine(res.line.general);
-        if (res.line.slope) setSlopeLine(res.line.slope);
+        const { A, B, C } = res.line.general;
+        if (B === 0) {
+          lineText = `x = ${-C / A}`;
+        } else {
+          lineText = `${A !== 0 ? `${A}x ` : ''}${B > 0 ? `+ ${B}y ` : `- ${Math.abs(B)}y `}${C >= 0 ? `+ ${C}` : `- ${Math.abs(C)}`} = 0`;
+        }
       }
 
-      // Reset circle parameters to 0
-      setGeneralCircle({ D: 0, E: 0, F: 0 });
-      setStandardCircle({ x0: 0, y0: 0, r: 0 });
+      let circleText = '';
+      if (res.circle.standard) {
+        circleText = `圆心(${res.circle.standard.x0}, ${res.circle.standard.y0}) R=${res.circle.standard.r}`;
+      } else if (res.circle.general) {
+        circleText = `x² + y² ${res.circle.general.D >= 0 ? '+' : ''}${res.circle.general.D}x ${res.circle.general.E >= 0 ? '+' : ''}${res.circle.general.E}y ${res.circle.general.F >= 0 ? '+' : ''}${res.circle.general.F} = 0`;
+      }
+
+      onParseError?.(null);
+      onParseSuccess?.({
+        line: lineText,
+        circle: circleText,
+      });
 
       setParseFeedback({
         type: 'success',
         msg: lang === 'zh'
-          ? `已成功识别直线方程。圆参数已重置置灰，等待输入圆方程。`
-          : `Line equation recognized. Circle parameters have been reset.`,
+          ? `已成功识别双方程！直线：${lineText}；圆：${circleText}`
+          : `${t.quickParseSuccess} (${res.matched})`,
       });
     }
   };
@@ -239,7 +272,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
                 setRawEquation(e.target.value);
                 if (parseFeedback) setParseFeedback(null);
               }}
-              placeholder={lang === 'zh' ? '粘贴方程，如 (x-1)²+(y+2)²=9 或 3x+4y-12=0 (支持分号隔开两个)' : t.quickParsePlaceholder}
+              placeholder={lang === 'zh' ? '粘贴方程，如 (x-1)²+(y+2)²=9 或 3x+4y-12=0 (用分号分隔双方程)' : t.quickParsePlaceholder}
               className="flex-1 px-3 py-2 text-xs sm:text-sm text-slate-800 bg-white border border-slate-200 rounded-md focus:outline-none focus:border-sky-500 font-mono min-w-0"
             />
             <button
@@ -247,6 +280,41 @@ export const InputPanel: React.FC<InputPanelProps> = ({
               className="px-4 py-2 text-xs sm:text-sm font-medium text-white bg-slate-900 rounded-md hover:bg-slate-800 transition-colors whitespace-nowrap shadow-xs shrink-0 cursor-pointer"
             >
               {t.btnQuickParse}
+            </button>
+          </div>
+
+          {/* P3: Clickable Example Formats */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
+            <span className="text-slate-500 font-medium">{lang === 'zh' ? '输入示例：' : 'Examples:'}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setRawEquation('3x + 4y - 12 = 0; x^2 + y^2 - 4x + 2y - 4 = 0');
+                if (parseFeedback) setParseFeedback(null);
+              }}
+              className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono transition cursor-pointer"
+            >
+              一般式 (分号分隔)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setRawEquation('x = 2; (x - 1)^2 + (y + 2)^2 = 25');
+                if (parseFeedback) setParseFeedback(null);
+              }}
+              className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono transition cursor-pointer"
+            >
+              标准式 (竖直线)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setRawEquation('y = 2x - 1; x^2 + y^2 = 5');
+                if (parseFeedback) setParseFeedback(null);
+              }}
+              className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono transition cursor-pointer"
+            >
+              斜截式与原点圆
             </button>
           </div>
         </form>

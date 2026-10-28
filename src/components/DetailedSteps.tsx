@@ -8,7 +8,7 @@ import { PositionalAnalysis } from '../types/geometry';
 import { TranslationSchema, SupportedLanguage } from '../i18n/translations';
 import { MathView } from './MathView';
 import { toFractionLatex } from '../utils/mathUtils';
-import { Copy, Check, Sparkles, BookOpen, AlertCircle } from 'lucide-react';
+import { Copy, Check, Sparkles, BookOpen, AlertCircle, Printer, FileDown } from 'lucide-react';
 
 interface DetailedStepsProps {
   analysis: PositionalAnalysis;
@@ -118,13 +118,23 @@ ${analysis.relation === 'intersecting' ? `5. Chord Length:\n   L = 2 * sqrt(R^2 
             </button>
           </div>
 
-          <button
-            onClick={handleCopySolution}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap cursor-pointer"
-          >
-            {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-            <span>{copied ? t.btnCopied : t.btnCopySolution}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopySolution}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap cursor-pointer"
+            >
+              {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+              <span>{copied ? t.btnCopied : t.btnCopySolution}</span>
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap cursor-pointer"
+              title={lang === 'zh' ? '打印整份解答或导出长图/PDF（含全部推导步骤）' : 'Print / Export Full Solution PDF'}
+            >
+              <Printer className="w-4 h-4 text-sky-600" />
+              <span>{lang === 'zh' ? '导出整份解答 (打印/PDF)' : 'Print / PDF'}</span>
+            </button>
+          </div>
         </div>
       </div>
 

@@ -20,6 +20,7 @@ export interface ParseResult {
     latex: string;
   };
   matched: string;
+  hasConjunctionError?: boolean;
 }
 
 // Clean and normalize math string
@@ -33,7 +34,9 @@ function cleanMathStr(str: string): string {
     .replace(/＝/g, '=')
     .replace(/²/g, '^2')
     .replace(/₀/g, '0')
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/^(?:直线|line)[:：]?/, '')
+    .replace(/^(?:圆|circle)[:：]?/, '');
 }
 
 /**
@@ -316,9 +319,20 @@ function parseSingleEquationChunk(chunk: string) {
 export function parseMathEquation(raw: string): ParseResult | null {
   if (!raw || !raw.trim()) return null;
 
-  // Split by common delimiters: newline, semicolon (; ；), comma (, ，), &, or Chinese separators
-  const chunks = raw
-    .split(/[\n\r;；,，&]+|(?<=[0-9])(?=\s*(?:和|与)\s*)/)
+  const trimmed = raw.trim();
+
+  // Explicit check for Chinese natural language conjunctions (和、与、及)
+  // If conjunctions are present and not separated by standard semicolons/newlines, abort and notify user
+  if (/[和与及]/.test(trimmed) && !trimmed.includes(';') && !trimmed.includes('；') && !trimmed.includes('\n')) {
+    return {
+      matched: '',
+      hasConjunctionError: true,
+    };
+  }
+
+  // Split by explicit delimiters: newline, semicolon (; ；), comma (, ，), &
+  const chunks = trimmed
+    .split(/[\n\r;；,，&]+/)
     .map((c) => c.trim())
     .filter(Boolean);
 
@@ -340,7 +354,7 @@ export function parseMathEquation(raw: string): ParseResult | null {
 
   // If no chunks matched via splitting, try the whole raw string directly
   if (!parsedCircle && !parsedLine) {
-    const res = parseSingleEquationChunk(raw);
+    const res = parseSingleEquationChunk(trimmed);
     if (res?.type === 'circle') {
       parsedCircle = res.circle;
       matchedPhrases.push(res.circle.latex);
@@ -350,13 +364,9 @@ export function parseMathEquation(raw: string): ParseResult | null {
     }
   }
 
-  if (parsedCircle || parsedLine) {
-    return {
-      circle: parsedCircle,
-      line: parsedLine,
-      matched: matchedPhrases.join(' & '),
-    };
-  }
-
-  return null;
+  return {
+    circle: parsedCircle,
+    line: parsedLine,
+    matched: matchedPhrases.join(' & '),
+  };
 }

@@ -120,6 +120,10 @@ export default function App() {
   const [circleDisabled, setCircleDisabled] = useState(false);
   const [lineDisabled, setLineDisabled] = useState(false);
 
+  // Parsing error and echo state (P1 & P2)
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [parsedEcho, setParsedEcho] = useState<{ line: string; circle: string } | null>(null);
+
   // Mistake Notebook stored in LocalStorage (v4 enforces 100% translated titles, tags & notes)
   const [mistakeQuestions, setMistakeQuestions] = useState<MistakeQuestion[]>(() => {
     try {
@@ -202,6 +206,8 @@ export default function App() {
     const item = mistakeQuestions.find((q) => q.id === presetId) ||
       PRESET_EXAM_PROBLEMS.find((q) => q.id === presetId);
     if (!item) return;
+    setParseError(null);
+    setParsedEcho(null);
     setCircleDisabled(false);
     setLineDisabled(false);
     setCircleMode(item.circleMode);
@@ -215,6 +221,8 @@ export default function App() {
 
   // Reset to default sample
   const handleReset = () => {
+    setParseError(null);
+    setParsedEcho(null);
     setCircleDisabled(false);
     setLineDisabled(false);
     setCircleMode('general');
@@ -242,7 +250,7 @@ export default function App() {
       isMastered: false,
       keywords: ['geometry', 'line', 'circle', tag.toLowerCase()],
     });
-    setMistakeQuestions((prev) => [newEntry, ...prev]);
+    setMistakeQuestions((prev) => [newEntry, ...prev].slice(0, 100));
   };
 
   const handleDeleteQuestion = (id: string) => {
@@ -420,14 +428,31 @@ export default function App() {
         {/* VIEW 1: SOLVER & ANALYSIS */}
         {activeNav === 'solver' && (
           <div className="space-y-5 sm:space-y-6">
-            {/* Top Quick Verdict Card */}
-            <SummaryCard
-              analysis={analysis}
-              circleDisabled={circleDisabled}
-              lineDisabled={lineDisabled}
-              t={t}
-              onOpenSaveModal={() => setIsSaveModalOpen(true)}
-            />
+            {/* Error Banner when parsing failed (P1: Parsing failure should fail overall) */}
+            {parseError ? (
+              <div className="bg-rose-50 border-2 border-rose-300 rounded-lg p-5 text-center space-y-2 shadow-xs">
+                <div className="flex items-center justify-center gap-2 text-rose-800 font-bold text-sm sm:text-base">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse" />
+                  <span>方程解析未通过 · 计算结果区已置空</span>
+                </div>
+                <p className="text-xs sm:text-sm text-rose-700 max-w-xl mx-auto leading-relaxed font-medium">
+                  {parseError}
+                </p>
+                <p className="text-[11px] text-rose-500">
+                  （系统严格要求双方程均解析成功才进行计算，未用默认参数填补，已清空结果区以防得到错误答案）
+                </p>
+              </div>
+            ) : (
+              /* Top Quick Verdict Card with P2 echo */
+              <SummaryCard
+                analysis={analysis}
+                circleDisabled={circleDisabled}
+                lineDisabled={lineDisabled}
+                t={t}
+                onOpenSaveModal={() => setIsSaveModalOpen(true)}
+                parsedEcho={parsedEcho}
+              />
+            )}
 
             {/* Split 2-Column: Left Inputs, Right Canvas */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
@@ -453,6 +478,14 @@ export default function App() {
                   lang={lang}
                   onSelectPreset={handleSelectPreset}
                   onReset={handleReset}
+                  onParseSuccess={(info) => {
+                    setParsedEcho(info);
+                    setParseError(null);
+                  }}
+                  onParseError={(err) => {
+                    setParseError(err);
+                    if (err) setParsedEcho(null);
+                  }}
                 />
               </div>
 
@@ -460,8 +493,8 @@ export default function App() {
                 <div className="flex-1 flex flex-col min-h-[360px] sm:min-h-[480px]">
                   <GeometryCanvas
                     analysis={analysis}
-                    circleDisabled={circleDisabled}
-                    lineDisabled={lineDisabled}
+                    circleDisabled={circleDisabled || !!parseError}
+                    lineDisabled={lineDisabled || !!parseError}
                     t={t}
                     onUpdateCenter={handleUpdateCenterFromCanvas}
                     onUpdateRadius={handleUpdateRadiusFromCanvas}
@@ -470,15 +503,17 @@ export default function App() {
               </div>
             </div>
 
-            {/* Detailed Step-by-Step Breakdown with LaTeX */}
-            <DetailedSteps
-              analysis={analysis}
-              circleType={circleMode === 'general' ? 'general' : 'standard'}
-              circleDisabled={circleDisabled}
-              lineDisabled={lineDisabled}
-              t={t}
-              lang={lang}
-            />
+            {/* Detailed Step-by-Step Breakdown with LaTeX (Hidden when parse error to avoid showing wrong answers) */}
+            {!parseError && (
+              <DetailedSteps
+                analysis={analysis}
+                circleType={circleMode === 'general' ? 'general' : 'standard'}
+                circleDisabled={circleDisabled}
+                lineDisabled={lineDisabled}
+                t={t}
+                lang={lang}
+              />
+            )}
           </div>
         )}
 

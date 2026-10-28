@@ -425,12 +425,20 @@ export const MistakeNotebook: React.FC<MistakeNotebookProps> = ({
             <Bookmark className="w-5 h-5 text-indigo-600 shrink-0" />
             <h2 className="text-base sm:text-lg font-semibold text-slate-900">{t.notebookTitle}</h2>
             <span className="text-xs sm:text-sm font-mono text-slate-500">
-              ({questions.length} {t.notebookCountText})
+              ({questions.length} / 50+ 题)
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
             {t.notebookSub}
           </p>
+          <div className="flex items-center gap-2 mt-1.5">
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
+              仅存于本机浏览器
+            </span>
+            <span className="text-[11px] text-slate-500">
+              容量已放宽至 50 题以上 · 支持导出 JSON 离线备份
+            </span>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
